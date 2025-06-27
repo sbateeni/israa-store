@@ -30,7 +30,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBZcUVARYZ_f57ht9cyDlPnnYxclnl7k3o",
   authDomain: "safaa-boutique.firebaseapp.com",
   projectId: "safaa-boutique",
-  storageBucket: "safaa-boutique.appspot.com",
+  storageBucket: "safaa-boutique.firebasestorage.app",
   messagingSenderId: "809977021637",
   appId: "1:809977021637:web:8c7854d538f4128aa5dcac"
 >>>>>>> 30d55bb (gcloud storage buckets update gs://safaa-boutique.firebasestorage.app --)
