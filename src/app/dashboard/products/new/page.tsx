@@ -44,18 +44,18 @@ export default function NewProductPage() {
             <div className="space-y-2">
               <Label htmlFor="name">Product Name</Label>
               <Input id="name" name="name" placeholder="e.g., Golden Dust" required />
-              {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name[0]}</p>}
+              {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name.join(', ')}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" name="description" placeholder="A short, catchy description..." required />
-              {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description[0]}</p>}
+              {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description.join(', ')}</p>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label htmlFor="price">Price (₪)</Label>
                     <Input id="price" name="price" type="number" step="0.01" placeholder="e.g., 250" required />
-                    {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price[0]}</p>}
+                    {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price.join(', ')}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
@@ -69,13 +69,20 @@ export default function NewProductPage() {
                             <SelectItem value="Creams">Creams</SelectItem>
                         </SelectContent>
                     </Select>
-                    {state.errors?.category && <p className="text-sm text-destructive">{state.errors.category[0]}</p>}
+                    {state.errors?.category && <p className="text-sm text-destructive">{state.errors.category.join(', ')}</p>}
                 </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input id="image" name="image" placeholder="https://placehold.co/600x600.png" required />
-              {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image[0]}</p>}
+              <Label htmlFor="image">Product Image</Label>
+              <Input id="image" name="image" type="file" accept="image/png, image/jpeg, image/webp" required />
+              <p className="text-xs text-muted-foreground">Required. Max file size: 5MB.</p>
+              {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image.join(', ')}</p>}
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="video">Product Video (Optional)</Label>
+              <Input id="video" name="video" type="file" accept="video/mp4, video/webm, video/ogg" />
+               <p className="text-xs text-muted-foreground">Optional. Max file size: 5MB.</p>
+              {state.errors?.video && <p className="text-sm text-destructive">{state.errors.video.join(', ')}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataAiHint">Image AI Hint</Label>

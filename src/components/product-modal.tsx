@@ -39,13 +39,24 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
       <DialogContent className="sm:max-w-[625px]">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="relative aspect-square">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="object-cover rounded-md"
-              data-ai-hint={product.dataAiHint}
-            />
+            {product.video ? (
+              <video
+                src={product.video}
+                controls
+                loop
+                autoPlay
+                muted
+                className="w-full h-full object-cover rounded-md"
+              />
+            ) : (
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                className="object-cover rounded-md"
+                data-ai-hint={product.dataAiHint}
+              />
+            )}
           </div>
           <div className="flex flex-col">
             <DialogHeader>

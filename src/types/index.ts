@@ -7,6 +7,7 @@ export type Product = {
   price: number;
   category: ProductCategory;
   image: string;
+  video?: string;
   dataAiHint?: string;
 };
 
