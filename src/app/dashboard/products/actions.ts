@@ -22,8 +22,14 @@ async function uploadFile(file: File, path: string): Promise<string> {
 const productSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
-  price: z.coerce.number().min(0, 'Price must be a positive number.').optional().or(z.literal('')),
-  category: z.enum(['Perfumes', 'Apparel', 'Creams']).optional().or(z.literal('')),
+  price: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number({invalid_type_error: "Price must be a number."}).min(0, 'Price must be a positive number.').optional()
+  ),
+  category: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.enum(['Perfumes', 'Apparel', 'Creams']).optional()
+  ),
   image: z
     .any()
     .transform(file => (file instanceof File && file.size > 0 ? file : undefined))
