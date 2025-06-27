@@ -20,16 +20,17 @@ async function uploadFile(file: File, path: string): Promise<string> {
 }
 
 const productSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters.'),
-  description: z.string().min(10, 'Description must be at least 10 characters.'),
-  price: z.coerce.number().min(0, 'Price must be a positive number.'),
-  category: z.enum(['Perfumes', 'Apparel', 'Creams'], { errorMap: () => ({ message: 'Please select a category.' }) }),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  price: z.coerce.number().min(0, 'Price must be a positive number.').optional().or(z.literal('')),
+  category: z.enum(['Perfumes', 'Apparel', 'Creams']).optional().or(z.literal('')),
   image: z
     .any()
-    .refine((file): file is File => file instanceof File && file.size > 0, "Image is required.")
-    .refine((file) => file.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
+    .transform(file => (file instanceof File && file.size > 0 ? file : undefined))
+    .optional()
+    .refine((file) => !file || file.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
     .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
   video: z
@@ -63,8 +64,11 @@ export async function addProduct(prevState: any, formData: FormData) {
   try {
     const { image, video, ...productData } = validatedFields.data;
 
-    // Upload image
-    const imageUrl = await uploadFile(image, 'product-images');
+    // Upload image if it exists
+    let imageUrl: string | undefined = undefined;
+    if (image) {
+      imageUrl = await uploadFile(image, 'product-images');
+    }
 
     // Upload video if it exists
     let videoUrl: string | undefined = undefined;
@@ -73,9 +77,16 @@ export async function addProduct(prevState: any, formData: FormData) {
     }
 
     const newProductData = {
-      ...productData,
-      image: imageUrl,
+      name: productData.name || "Untitled Product",
+      description: productData.description || "No description provided.",
+      price: productData.price || 0,
+      category: productData.category || "Perfumes",
+      image: imageUrl || "https://placehold.co/600x600.png",
       ...(videoUrl && { video: videoUrl }),
+      dataAiHint: productData.dataAiHint,
+      instagram: productData.instagram,
+      twitter: productData.twitter,
+      facebook: productData.facebook,
     };
 
     await addDoc(collection(db, 'products'), newProductData);

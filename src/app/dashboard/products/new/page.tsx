@@ -39,7 +39,7 @@ export default function NewProductPage() {
       <Card>
         <CardHeader>
           <CardTitle>Add a New Product</CardTitle>
-          <CardDescription>Fill in the details below to add a new product to your store.</CardDescription>
+          <CardDescription>Fill in the details below to add a new product to your store. All fields are optional.</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={dispatch} className="space-y-6">
@@ -49,7 +49,6 @@ export default function NewProductPage() {
                 id="name"
                 name="name"
                 placeholder="e.g., Golden Dust"
-                required
                 className={cn(state.errors?.name && "border-destructive focus-visible:ring-destructive")}
                 defaultValue={state.errors ? state.values?.name : ''}
               />
@@ -61,7 +60,6 @@ export default function NewProductPage() {
                 id="description"
                 name="description"
                 placeholder="A short, catchy description..."
-                required
                 className={cn(state.errors?.description && "border-destructive focus-visible:ring-destructive")}
                 defaultValue={state.errors ? state.values?.description : ''}
               />
@@ -76,7 +74,6 @@ export default function NewProductPage() {
                         type="number"
                         step="0.01"
                         placeholder="e.g., 250"
-                        required
                         className={cn(state.errors?.price && "border-destructive focus-visible:ring-destructive")}
                         defaultValue={state.errors ? state.values?.price : ''}
                     />
@@ -84,7 +81,7 @@ export default function NewProductPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
-                    <Select name="category" required defaultValue={state.errors ? state.values?.category : ''}>
+                    <Select name="category" defaultValue={state.errors ? state.values?.category : ''}>
                         <SelectTrigger id="category" className={cn(state.errors?.category && "border-destructive focus:ring-destructive")}>
                             <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
@@ -104,10 +101,9 @@ export default function NewProductPage() {
                 name="image"
                 type="file"
                 accept="image/png, image/jpeg, image/webp"
-                required
                 className={cn(state.errors?.image && "border-destructive focus-visible:ring-destructive")}
               />
-              <p className="text-xs text-muted-foreground">Required. Max file size: 5MB.</p>
+              <p className="text-xs text-muted-foreground">Optional. Max file size: 5MB.</p>
               {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image.join(', ')}</p>}
             </div>
              <div className="space-y-2">
