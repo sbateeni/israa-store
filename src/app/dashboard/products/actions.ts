@@ -97,10 +97,19 @@ export async function addProduct(prevState: any, formData: FormData) {
 
     await addDoc(collection(db, 'products'), newProductData);
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adding product:', error);
+    
+    let errorMessage = 'An unexpected error occurred. Could not add product.';
+    // Check for Firebase permission denied error
+    if (error.code === 'permission-denied') {
+        errorMessage = 'Permission to add product was denied. Please check your Firebase security rules to allow write operations.';
+    } else if (error.message) {
+        errorMessage = `An error occurred: ${error.message}`;
+    }
+
     return {
-      message: 'An unexpected error occurred. Could not add product.',
+      message: errorMessage,
       errors: {},
       values,
     };
