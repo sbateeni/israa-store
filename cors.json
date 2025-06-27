@@ -1,0 +1,16 @@
+[
+  {
+    "origin": [
+      "http://localhost:9002",
+      "https://safaa-boutique.web.app",
+      "https://safaa-boutique.firebaseapp.com",
+      "https://6000-firebase-studio-1751021219802.cluster-jbb3mjctu5cbgsi6hwq6u4btwe.cloudworkstations.dev"
+    ],
+    "method": ["GET", "PUT", "POST", "DELETE"],
+    "responseHeader": [
+      "Content-Type",
+      "x-goog-resumable"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
