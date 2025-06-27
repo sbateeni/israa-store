@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { addProduct } from '../actions';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ function SubmitButton() {
 
 export default function NewProductPage() {
   const initialState = { message: null, errors: {} };
-  const [state, dispatch] = useFormState(addProduct, initialState);
+  const [state, dispatch] = useActionState(addProduct, initialState);
 
   return (
     <div className="container py-10">

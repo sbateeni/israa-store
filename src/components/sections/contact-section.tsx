@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from 'react';
+import { useFormStatus } from "react-dom";
 import { useEffect, useRef } from "react";
 import { useLocale } from "@/contexts/locale-provider";
 import { Input } from "../ui/input";
@@ -26,7 +27,7 @@ export default function ContactSection() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const initialState = { message: null, errors: {}, isSuccess: false };
-  const [state, dispatch] = useFormState(submitContactForm, initialState);
+  const [state, dispatch] = useActionState(submitContactForm, initialState);
 
   useEffect(() => {
     if (state.message) {
