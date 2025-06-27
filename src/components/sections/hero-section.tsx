@@ -25,7 +25,7 @@ export default function HeroSection() {
       >
         <CarouselContent className="h-full">
           {heroSlides.map((slide, index) => (
-            <CarouselItem key={index}>
+            <CarouselItem key={index} className="h-full">
               <div className="relative w-full h-full">
                 <Image
                   src={slide.image}
