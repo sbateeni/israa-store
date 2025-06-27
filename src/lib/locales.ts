@@ -1,6 +1,6 @@
 export const locales = {
   en: {
-    appName: "isra store",
+    appName: "Safaa Boutique",
     nav: {
       about: "About Us",
       products: "Our Products",
@@ -48,11 +48,11 @@ export const locales = {
       checkout: "Checkout",
     },
     footer: {
-      copyright: "© 2024 isra store",
+      copyright: "© 2024 Safaa Boutique",
     },
   },
   ar: {
-    appName: "متجر إسراء",
+    appName: "بوتيك صفاء",
     nav: {
       about: "من نحن",
       products: "منتجاتنا",
@@ -100,7 +100,7 @@ export const locales = {
       checkout: "إتمام الشراء",
     },
     footer: {
-      copyright: "© 2024 متجر إسراء",
+      copyright: "© 2024 بوتيك صفاء",
     },
   },
 };

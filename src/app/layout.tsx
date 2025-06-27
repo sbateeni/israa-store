@@ -10,7 +10,7 @@ import Footer from '@/components/layout/footer';
 import WhatsAppFloat from '@/components/whatsapp-float';
 
 export const metadata: Metadata = {
-  title: 'isra store',
+  title: 'Safaa Boutique',
   description: 'Luxury perfumes, apparel, and creams.',
 };
 
