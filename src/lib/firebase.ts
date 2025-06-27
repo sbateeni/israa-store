@@ -10,6 +10,7 @@ import { getStorage, FirebaseStorage } from "firebase/storage";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
 <<<<<<< HEAD
+<<<<<<< HEAD
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "demo-api-key",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "demo-project.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "demo-project-id",
@@ -25,6 +26,14 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 >>>>>>> 6e29199 (// Import the functions you need from the SDKs you need)
+=======
+  apiKey: "AIzaSyBZcUVARYZ_f57ht9cyDlPnnYxclnl7k3o",
+  authDomain: "safaa-boutique.firebaseapp.com",
+  projectId: "safaa-boutique",
+  storageBucket: "safaa-boutique.appspot.com",
+  messagingSenderId: "809977021637",
+  appId: "1:809977021637:web:8c7854d538f4128aa5dcac"
+>>>>>>> 30d55bb (gcloud storage buckets update gs://safaa-boutique.firebasestorage.app --)
 };
 
 // Initialize Firebase only if we have valid configuration
