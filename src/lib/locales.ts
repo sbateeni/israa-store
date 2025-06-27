@@ -44,6 +44,8 @@ export const locales = {
       total: "Total",
       recommendations: "You Might Also Like",
       loadingRecs: "Finding recommendations for you...",
+      order_via: "Or complete your order via",
+      checkout: "Checkout",
     },
     footer: {
       copyright: "© 2024 isra store",
@@ -94,6 +96,8 @@ export const locales = {
       total: "المجموع",
       recommendations: "قد يعجبك أيضاً",
       loadingRecs: "نبحث لك عن توصيات...",
+      order_via: "أو أكمل طلبك عبر",
+      checkout: "إتمام الشراء",
     },
     footer: {
       copyright: "© 2024 متجر إسراء",
