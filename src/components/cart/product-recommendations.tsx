@@ -7,18 +7,42 @@ import { Product } from "@/types";
 import { useLocale } from "@/contexts/locale-provider";
 import Image from "next/image";
 import { Button } from "../ui/button";
-import { products as allProducts } from "@/lib/products";
+import { products as fallbackProducts } from "@/lib/products";
 import { Skeleton } from "../ui/skeleton";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 export default function ProductRecommendations() {
   const { items: cartItems, addItem } = useCart();
   const [recommendations, setRecommendations] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const { t } = useLocale();
 
   useEffect(() => {
+    async function fetchProducts() {
+        try {
+            const querySnapshot = await getDocs(collection(db, "products"));
+            if (querySnapshot.empty) {
+                setAllProducts(fallbackProducts);
+            } else {
+                const productsData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                })) as Product[];
+                setAllProducts(productsData);
+            }
+        } catch (error) {
+            console.error("Error fetching products for recommendations: ", error);
+            setAllProducts(fallbackProducts);
+        }
+    }
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
     async function fetchRecommendations() {
-      if (cartItems.length > 0) {
+      if (cartItems.length > 0 && allProducts.length > 0) {
         setIsLoading(true);
         try {
           const aiInput = cartItems.map(item => ({
@@ -34,7 +58,10 @@ export default function ProductRecommendations() {
             allProducts.find(p => p.name.toLowerCase() === rec.name.toLowerCase())
           ).filter((p): p is Product => p !== undefined);
 
-          setRecommendations(matchedProducts.slice(0, 2)); // Show max 2 recommendations
+          // filter out products that are already in the cart
+          const finalRecommendations = matchedProducts.filter(rec => !cartItems.some(cartItem => cartItem.id === rec.id));
+
+          setRecommendations(finalRecommendations.slice(0, 2)); // Show max 2 recommendations
         } catch (error) {
           console.error("Failed to fetch recommendations:", error);
           setRecommendations([]);
@@ -47,7 +74,7 @@ export default function ProductRecommendations() {
     }
 
     fetchRecommendations();
-  }, [cartItems]);
+  }, [cartItems, allProducts]);
 
   if (isLoading) {
     return (
