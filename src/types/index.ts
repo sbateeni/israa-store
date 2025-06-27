@@ -9,6 +9,9 @@ export type Product = {
   image: string;
   video?: string;
   dataAiHint?: string;
+  instagram?: string;
+  twitter?: string;
+  facebook?: string;
 };
 
 export type CartItem = Product & {

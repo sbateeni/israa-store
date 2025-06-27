@@ -13,6 +13,7 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import { useCart } from "@/contexts/cart-provider";
 import { useToast } from "@/hooks/use-toast";
+import { Instagram, Twitter, Facebook } from "lucide-react";
 
 interface ProductModalProps {
   product: Product | null;
@@ -38,25 +39,50 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
     <Dialog open={!!product} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[625px]">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="relative aspect-square">
-            {product.video ? (
-              <video
-                src={product.video}
-                controls
-                loop
-                autoPlay
-                muted
-                className="w-full h-full object-cover rounded-md"
-              />
-            ) : (
-              <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                className="object-cover rounded-md"
-                data-ai-hint={product.dataAiHint}
-              />
-            )}
+          <div className="flex flex-col gap-4">
+            <div className="relative aspect-square">
+              {product.video ? (
+                <video
+                  src={product.video}
+                  controls
+                  loop
+                  autoPlay
+                  muted
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : (
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-cover rounded-md"
+                  data-ai-hint={product.dataAiHint}
+                />
+              )}
+            </div>
+            <div className="flex justify-center items-center gap-4">
+              {product.instagram && (
+                <Button variant="ghost" size="icon" asChild>
+                    <a href={product.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                        <Instagram className="h-5 w-5" />
+                    </a>
+                </Button>
+              )}
+              {product.twitter && (
+                 <Button variant="ghost" size="icon" asChild>
+                    <a href={product.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                        <Twitter className="h-5 w-5" />
+                    </a>
+                </Button>
+              )}
+              {product.facebook && (
+                 <Button variant="ghost" size="icon" asChild>
+                    <a href={product.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                        <Facebook className="h-5 w-5" />
+                    </a>
+                </Button>
+              )}
+            </div>
           </div>
           <div className="flex flex-col">
             <DialogHeader>

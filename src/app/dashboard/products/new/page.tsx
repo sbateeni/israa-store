@@ -90,6 +90,24 @@ export default function NewProductPage() {
               <Input id="dataAiHint" name="dataAiHint" placeholder="e.g., perfume bottle" />
               <p className="text-xs text-muted-foreground">Optional. One or two keywords for image search.</p>
             </div>
+            <div className="space-y-4 pt-4 border-t">
+                <p className="text-sm font-medium">Social Media Links (Optional)</p>
+                <div className="space-y-2">
+                    <Label htmlFor="instagram">Instagram</Label>
+                    <Input id="instagram" name="instagram" placeholder="https://instagram.com/your-page" />
+                    {state.errors?.instagram && <p className="text-sm text-destructive">{state.errors.instagram.join(', ')}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="twitter">Twitter / X</Label>
+                    <Input id="twitter" name="twitter" placeholder="https://x.com/your-handle" />
+                    {state.errors?.twitter && <p className="text-sm text-destructive">{state.errors.twitter.join(', ')}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="facebook">Facebook</Label>
+                    <Input id="facebook" name="facebook" placeholder="https://facebook.com/your-page" />
+                    {state.errors?.facebook && <p className="text-sm text-destructive">{state.errors.facebook.join(', ')}</p>}
+                </div>
+            </div>
             {state.message && <p className="text-sm text-destructive">{state.message}</p>}
             <div className="flex gap-4">
                 <SubmitButton />

@@ -42,6 +42,9 @@ const productSchema = z.object({
       'Only .mp4, .webm, and .ogg formats are supported for videos.'
     ),
   dataAiHint: z.string().optional(),
+  instagram: z.string().url("Must be a valid URL").or(z.literal('')).optional().transform(e => e === "" ? undefined : e),
+  twitter: z.string().url("Must be a valid URL").or(z.literal('')).optional().transform(e => e === "" ? undefined : e),
+  facebook: z.string().url("Must be a valid URL").or(z.literal('')).optional().transform(e => e === "" ? undefined : e),
 });
 
 
@@ -54,6 +57,9 @@ export async function addProduct(prevState: any, formData: FormData) {
     image: formData.get('image'),
     video: formData.get('video'),
     dataAiHint: formData.get('dataAiHint'),
+    instagram: formData.get('instagram'),
+    twitter: formData.get('twitter'),
+    facebook: formData.get('facebook'),
   });
 
   if (!validatedFields.success) {
