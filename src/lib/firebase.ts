@@ -28,7 +28,7 @@ try {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   if (app) {
     isSupported().then(yes => {
-      if (yes) {
+      if (yes && app) {
         analytics = getAnalytics(app);
       }
     });
