@@ -70,31 +70,31 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
             <DialogDescription className="text-base flex-grow">
               {product.description}
             </DialogDescription>
-            <div className="flex justify-start items-center gap-2 mt-4">
-              {product.instagram && (
-                <Button variant="ghost" size="icon" asChild>
-                    <a href={product.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                        <Instagram className="h-5 w-5" />
-                    </a>
-                </Button>
-              )}
-              {product.twitter && (
-                 <Button variant="ghost" size="icon" asChild>
-                    <a href={product.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-                        <Twitter className="h-5 w-5" />
-                    </a>
-                </Button>
-              )}
-              {product.facebook && (
-                 <Button variant="ghost" size="icon" asChild>
-                    <a href={product.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                        <Facebook className="h-5 w-5" />
-                    </a>
-                </Button>
-              )}
-            </div>
-            <DialogFooter className="mt-4">
-              <Button className="w-full" onClick={handleAddToCart}>Add to Cart</Button>
+            <DialogFooter className="mt-4 sm:justify-between items-center">
+                <div className="flex justify-start items-center gap-2 order-last sm:order-first">
+                    {product.instagram && (
+                        <Button variant="ghost" size="icon" asChild>
+                            <a href={product.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                                <Instagram className="h-5 w-5" />
+                            </a>
+                        </Button>
+                    )}
+                    {product.twitter && (
+                        <Button variant="ghost" size="icon" asChild>
+                            <a href={product.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                                <Twitter className="h-5 w-5" />
+                            </a>
+                        </Button>
+                    )}
+                    {product.facebook && (
+                        <Button variant="ghost" size="icon" asChild>
+                            <a href={product.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                                <Facebook className="h-5 w-5" />
+                            </a>
+                        </Button>
+                    )}
+                </div>
+              <Button className="w-full sm:w-auto" onClick={handleAddToCart}>Add to Cart</Button>
             </DialogFooter>
           </div>
         </div>

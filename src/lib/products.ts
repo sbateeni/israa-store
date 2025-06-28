@@ -40,7 +40,10 @@ export const products: Product[] = [
     price: 750,
     category: "Apparel",
     image: "https://placehold.co/600x600.png",
-    dataAiHint: "elegant dress"
+    dataAiHint: "elegant dress",
+    instagram: "https://instagram.com",
+    twitter: "https://twitter.com",
+    facebook: "https://facebook.com"
   },
   {
     id: "a2",
