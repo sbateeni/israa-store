@@ -25,7 +25,7 @@ export const products: Product[] = [
     description: "استمتع بتجربة فاخرة مع عطر إيليغانس، الذي يجمع بين عبق الزهور الشرقية ونفحات الفانيليا الدافئة. تصميم الزجاجة الأنيق يعكس رقي العطر وفخامته، ليمنحك حضورًا لا يُنسى في كل مناسبة.",
     price: 150,
     category: "Perfumes",
-    image: "/products/elegance-perfume.svg",
+    image: "/products/3614273069540_.jpg",
     dataAiHint: "elegant perfume bottle"
   },
   {
