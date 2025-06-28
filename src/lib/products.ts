@@ -32,7 +32,11 @@ export const products: Product[] = [
     price: 150,
     category: "Perfumes",
     image: "/products/3614273069540_.jpg",
-    dataAiHint: "elegant perfume bottle"
+    dataAiHint: "elegant perfume bottle",
+    instagram: "https://instagram.com",
+    facebook: "https://facebook.com",
+    snapchat: "https://www.snapchat.com/",
+    whatsapp: "https://wa.me/"
   },
   {
     id: "a1",
