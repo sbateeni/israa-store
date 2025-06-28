@@ -1,8 +1,10 @@
+
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ChangeEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,18 +19,36 @@ export default function NewProductPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
+    const imageFile = formData.get('image') as File | null;
+    
+    let imageUrl = imagePreview || 'https://placehold.co/600x600.png';
+
     const newProductData = {
       name: formData.get('name') as string || 'Untitled Product',
       description: formData.get('description') as string || 'No description.',
       price: Number(formData.get('price')) || 0,
       category: (formData.get('category') as ProductCategory) || 'Perfumes',
-      image: formData.get('image') as string || 'https://placehold.co/600x600.png',
+      image: imageUrl,
       dataAiHint: formData.get('dataAiHint') as string | undefined,
     };
     
@@ -78,7 +98,7 @@ export default function NewProductPage() {
           <CardTitle>Add a Product Locally</CardTitle>
           <CardDescription>
             Products added here are saved in your browser's local storage and won't be stored in Firebase.
-            For the image, provide a path to an image in your `public` folder (e.g., `/images/my-perfume.jpg`).
+            Select an image from your computer to add it to the product.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -125,15 +145,28 @@ export default function NewProductPage() {
                 </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Product Image Path</Label>
+              <Label htmlFor="image">Product Image</Label>
               <Input
                 id="image"
                 name="image"
-                type="text"
-                placeholder="e.g., /perfume1.png (must be in public folder)"
+                type="file"
+                accept="image/png, image/jpeg, image/webp"
+                onChange={handleImageChange}
               />
-               <p className="text-xs text-muted-foreground">Instead of uploading, provide the path to an image located in the project's `public` folder.</p>
+               <p className="text-xs text-muted-foreground">Select an image file to upload from your computer.</p>
             </div>
+            {imagePreview && (
+                <div className="space-y-2">
+                    <Label>Image Preview</Label>
+                    <Image
+                        src={imagePreview}
+                        alt="Product preview"
+                        width={100}
+                        height={100}
+                        className="rounded-md object-cover border"
+                    />
+                </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="dataAiHint">Image AI Hint</Label>
               <Input
