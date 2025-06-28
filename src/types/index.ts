@@ -10,8 +10,9 @@ export type Product = {
   video?: string;
   dataAiHint?: string;
   instagram?: string;
-  twitter?: string;
   facebook?: string;
+  snapchat?: string;
+  whatsapp?: string;
 };
 
 export type CartItem = Product & {

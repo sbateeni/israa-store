@@ -12,8 +12,9 @@ export const products: Product[] = [
     image: "https://placehold.co/600x600.png",
     dataAiHint: "perfume bottle",
     instagram: "https://instagram.com",
-    twitter: "https://twitter.com",
-    facebook: "https://facebook.com"
+    facebook: "https://facebook.com",
+    snapchat: "https://www.snapchat.com/",
+    whatsapp: "https://wa.me/"
   },
   {
     id: "p2",
@@ -42,7 +43,6 @@ export const products: Product[] = [
     image: "https://placehold.co/600x600.png",
     dataAiHint: "elegant dress",
     instagram: "https://instagram.com",
-    twitter: "https://twitter.com",
     facebook: "https://facebook.com"
   },
   {
