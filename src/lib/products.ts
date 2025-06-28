@@ -1,5 +1,7 @@
 import type { Product, Testimonial } from "@/types";
 
+// Note: This file now serves as a fallback or for initial data.
+// All active product management is now handled through the dashboard and Firebase.
 export const products: Product[] = [
   {
     id: "p1",
