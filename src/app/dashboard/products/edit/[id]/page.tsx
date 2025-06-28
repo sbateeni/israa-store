@@ -71,7 +71,7 @@ export default function EditProductPage() {
             try {
                 let productData: Product | null = null;
                 if (isLocalProduct) {
-                    const localProductsJSON = localStorage.getItem('safaa-products');
+                    const localProductsJSON = localStorage.getItem('isra-store-products');
                     const localProducts: Product[] = localProductsJSON ? JSON.parse(localProductsJSON) : [];
                     productData = localProducts.find(p => p.id === id) || null;
                 } else {
@@ -141,12 +141,12 @@ export default function EditProductPage() {
             };
 
             try {
-                const localProductsJSON = localStorage.getItem('safaa-products');
+                const localProductsJSON = localStorage.getItem('isra-store-products');
                 let localProducts: Product[] = localProductsJSON ? JSON.parse(localProductsJSON) : [];
                 const productIndex = localProducts.findIndex(p => p.id === id);
                 if (productIndex > -1) {
                     localProducts[productIndex] = { ...localProducts[productIndex], ...updatedData };
-                    localStorage.setItem('safaa-products', JSON.stringify(localProducts));
+                    localStorage.setItem('isra-store-products', JSON.stringify(localProducts));
                     toast({ title: 'Success', description: 'Product updated locally.' });
                     router.push('/dashboard/products');
                 } else {
@@ -273,4 +273,3 @@ export default function EditProductPage() {
         </div>
     );
 }
-

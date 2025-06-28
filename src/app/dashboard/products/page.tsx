@@ -36,7 +36,7 @@ export default function ProductsPage() {
 
       // 1. Load from localStorage
       try {
-        const localProductsJSON = localStorage.getItem('safaa-products');
+        const localProductsJSON = localStorage.getItem('isra-store-products');
         if (localProductsJSON) {
           combinedProducts.push(...JSON.parse(localProductsJSON));
         }
@@ -79,10 +79,10 @@ export default function ProductsPage() {
     startTransition(async () => {
       if (productToDelete.id.startsWith('local-')) {
         try {
-          const localProductsJSON = localStorage.getItem('safaa-products');
+          const localProductsJSON = localStorage.getItem('isra-store-products');
           let localProducts: Product[] = localProductsJSON ? JSON.parse(localProductsJSON) : [];
           const updatedLocalProducts = localProducts.filter(p => p.id !== productToDelete.id);
-          localStorage.setItem('safaa-products', JSON.stringify(updatedLocalProducts));
+          localStorage.setItem('isra-store-products', JSON.stringify(updatedLocalProducts));
           
           setProducts(prevProducts => prevProducts.filter(p => p.id !== productToDelete.id));
           toast({ title: 'Success', description: 'Product deleted from local storage.' });
@@ -221,4 +221,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-

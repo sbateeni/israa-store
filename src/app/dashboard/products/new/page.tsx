@@ -53,7 +53,7 @@ export default function NewProductPage() {
     };
     
     try {
-      const existingProductsJSON = localStorage.getItem('safaa-products');
+      const existingProductsJSON = localStorage.getItem('isra-store-products');
       const existingProducts: Product[] = existingProductsJSON ? JSON.parse(existingProductsJSON) : [];
       
       const productWithId: Product = {
@@ -62,7 +62,7 @@ export default function NewProductPage() {
       };
 
       const updatedProducts = [...existingProducts, productWithId];
-      localStorage.setItem('safaa-products', JSON.stringify(updatedProducts));
+      localStorage.setItem('isra-store-products', JSON.stringify(updatedProducts));
 
       toast({
         title: 'Product Added Locally',
