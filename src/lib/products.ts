@@ -95,12 +95,21 @@ export const products: Product[] = [
     dataAiHint: "traditional clothing"
   },
   {
+<<<<<<< HEAD
     id: "31407fb8",
     name: "sbate",
     description: "2123124ثي",
     price: 12,
     category: "Creams",
     image: "/products/198c0877-30d8-4157-ab68-0f9b7e32e5c7.png",
+=======
+    id: "18917b9e",
+    name: "sbate",
+    description: "dfwesfvwrtg 42353",
+    price: 123,
+    category: "Apparel",
+    image: "/products/f79df633-87af-46c6-92d2-e7190a1325f0.jfif",
+>>>>>>> refs/remotes/origin/main
     dataAiHint: "user uploaded"
   }
 ];
