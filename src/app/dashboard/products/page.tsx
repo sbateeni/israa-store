@@ -8,16 +8,20 @@ import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProducts() {
+      setLoading(true);
+      setError(null);
       try {
         const querySnapshot = await getDocs(collection(db, 'products'));
         const productsData = querySnapshot.docs.map(doc => ({
@@ -25,8 +29,13 @@ export default function ProductsPage() {
           ...doc.data(),
         })) as Product[];
         setProducts(productsData);
-      } catch (error) {
-        console.error("Error fetching products: ", error);
+      } catch (err: any) {
+        console.error("Error fetching products: ", err);
+        if (err.code === 'permission-denied') {
+          setError("Permission Denied: Your security rules are blocking access to products. Please update your Firestore security rules to allow read operations.");
+        } else {
+          setError("An unexpected error occurred while fetching products.");
+        }
       } finally {
         setLoading(false);
       }
@@ -52,6 +61,13 @@ export default function ProductsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error Fetching Products</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -97,11 +113,13 @@ export default function ProductsPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No products found.
-                  </TableCell>
-                </TableRow>
+                !error && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      No products found.
+                    </TableCell>
+                  </TableRow>
+                )
               )}
             </TableBody>
           </Table>

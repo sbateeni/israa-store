@@ -16,11 +16,14 @@ import ProductModal from "../product-modal";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { Skeleton } from "../ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 export default function ProductsSection() {
   const { t } = useLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] =
     useState<ProductCategory | "all">("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -28,6 +31,7 @@ export default function ProductsSection() {
   useEffect(() => {
     async function fetchProducts() {
       setLoading(true);
+      setError(null);
       try {
         const querySnapshot = await getDocs(collection(db, "products"));
         if (querySnapshot.empty) {
@@ -39,8 +43,13 @@ export default function ProductsSection() {
             })) as Product[];
             setProducts(productsData);
         }
-      } catch (error) {
-        console.error("Error fetching products: ", error);
+      } catch (err: any) {
+        console.error("Error fetching products: ", err);
+        if (err.code === 'permission-denied') {
+          setError("Products could not be loaded due to a permission issue. Showing sample products instead.");
+        } else {
+          setError("An error occurred while loading products. Showing sample products instead.");
+        }
         setProducts(fallbackProducts); // Use fallback on error
       } finally {
         setLoading(false);
@@ -88,6 +97,15 @@ export default function ProductsSection() {
           </SelectContent>
         </Select>
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-8">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Note</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {loading ? (
              Array.from({ length: 8 }).map((_, i) => (
