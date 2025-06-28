@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -8,15 +9,24 @@ import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, AlertTriangle } from 'lucide-react';
+import { PlusCircle, AlertTriangle, MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { deleteProduct } from './actions';
+
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -50,14 +60,48 @@ export default function ProductsPage() {
           setError("An unexpected error occurred while fetching products.");
         }
       } finally {
-        // De-duplicate, preferring local ones if names clash
-        const uniqueProducts = Array.from(new Map(combinedProducts.map(p => [p.name, p])).values());
+        const uniqueProducts = Array.from(new Map(combinedProducts.map(p => [p.id, p])).values());
         setProducts(uniqueProducts);
         setLoading(false);
       }
     }
     fetchProducts();
   }, []);
+
+  const handleDeleteClick = (product: Product) => {
+    setProductToDelete(product);
+    setIsAlertOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+
+    startTransition(async () => {
+      if (productToDelete.id.startsWith('local-')) {
+        try {
+          const localProductsJSON = localStorage.getItem('safaa-products');
+          let localProducts: Product[] = localProductsJSON ? JSON.parse(localProductsJSON) : [];
+          const updatedLocalProducts = localProducts.filter(p => p.id !== productToDelete.id);
+          localStorage.setItem('safaa-products', JSON.stringify(updatedLocalProducts));
+          
+          setProducts(prevProducts => prevProducts.filter(p => p.id !== productToDelete.id));
+          toast({ title: 'Success', description: 'Product deleted from local storage.' });
+        } catch (e) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not delete local product.' });
+        }
+      } else {
+        const result = await deleteProduct(productToDelete.id);
+        if (result.success) {
+          setProducts(prevProducts => prevProducts.filter(p => p.id !== productToDelete.id));
+          toast({ title: 'Success', description: result.message });
+        } else {
+          toast({ variant: 'destructive', title: 'Error', description: result.message });
+        }
+      }
+      setIsAlertOpen(false);
+      setProductToDelete(null);
+    });
+  };
 
   return (
     <div className="container py-10">
@@ -115,7 +159,7 @@ export default function ProductsPage() {
                         alt={product.name}
                         className="aspect-square rounded-md object-cover"
                         height="64"
-                        src={product.image}
+                        src={product.image || 'https://placehold.co/600x600.png'}
                         width="64"
                         data-ai-hint={product.dataAiHint}
                       />
@@ -124,7 +168,23 @@ export default function ProductsPage() {
                     <TableCell>{product.category}</TableCell>
                     <TableCell>{product.price} ₪</TableCell>
                     <TableCell>
-                      {/* Edit/Delete buttons can go here */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/products/edit/${product.id}`}>Edit</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteClick(product)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -141,6 +201,24 @@ export default function ProductsPage() {
           </Table>
         </CardContent>
       </Card>
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product
+              "{productToDelete?.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+              {isPending ? 'Deleting...' : 'Continue'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
