@@ -20,6 +20,15 @@ export const products: Product[] = [
     dataAiHint: "luxury perfume"
   },
   {
+    id: "p4",
+    name: "عطر إيليغانس الفاخر",
+    description: "استمتع بتجربة فاخرة مع عطر إيليغانس، الذي يجمع بين عبق الزهور الشرقية ونفحات الفانيليا الدافئة. تصميم الزجاجة الأنيق يعكس رقي العطر وفخامته، ليمنحك حضورًا لا يُنسى في كل مناسبة.",
+    price: 150,
+    category: "Perfumes",
+    image: "/products/elegance-perfume.jpg",
+    dataAiHint: "elegant perfume bottle"
+  },
+  {
     id: "a1",
     name: "Silk Abaya",
     description: "An elegant and flowing abaya made from the finest pure silk.",
