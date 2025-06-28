@@ -1,9 +1,8 @@
 'use client';
 
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { addProduct } from '../actions';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,20 +10,58 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" disabled={pending}>
-            {pending ? 'Adding Product...' : 'Add Product'}
-        </Button>
-    );
-}
+import { useToast } from '@/hooks/use-toast';
+import type { Product, ProductCategory } from '@/types';
 
 export default function NewProductPage() {
-  const initialState = { message: null, errors: {} };
-  const [state, dispatch] = useActionState(addProduct, initialState);
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+
+    const formData = new FormData(event.currentTarget);
+    const newProductData = {
+      name: formData.get('name') as string || 'Untitled Product',
+      description: formData.get('description') as string || 'No description.',
+      price: Number(formData.get('price')) || 0,
+      category: (formData.get('category') as ProductCategory) || 'Perfumes',
+      image: formData.get('image') as string || 'https://placehold.co/600x600.png',
+      dataAiHint: formData.get('dataAiHint') as string | undefined,
+    };
+    
+    try {
+      const existingProductsJSON = localStorage.getItem('safaa-products');
+      const existingProducts: Product[] = existingProductsJSON ? JSON.parse(existingProductsJSON) : [];
+      
+      const productWithId: Product = {
+          ...newProductData,
+          id: `local-${Date.now()}`,
+      };
+
+      const updatedProducts = [...existingProducts, productWithId];
+      localStorage.setItem('safaa-products', JSON.stringify(updatedProducts));
+
+      toast({
+        title: 'Product Added Locally',
+        description: 'The product has been saved to your browser\'s local storage.',
+      });
+      
+      router.push('/dashboard/products');
+
+    } catch (error) {
+      console.error('Failed to save product to local storage', error);
+      toast({
+        title: 'Error',
+        description: 'Could not save the product. Check browser permissions for local storage.',
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+    }
+  };
+
 
   return (
     <div className="container py-10">
@@ -38,21 +75,21 @@ export default function NewProductPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Add a New Product</CardTitle>
-          <CardDescription>Fill in the details below to add a new product to your store. All fields are optional.</CardDescription>
+          <CardTitle>Add a Product Locally</CardTitle>
+          <CardDescription>
+            Products added here are saved in your browser's local storage and won't be stored in Firebase.
+            For the image, provide a path to an image in your `public` folder (e.g., `/images/my-perfume.jpg`).
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={dispatch} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">Product Name</Label>
               <Input
                 id="name"
                 name="name"
                 placeholder="e.g., Golden Dust"
-                className={cn(state.errors?.name && "border-destructive focus-visible:ring-destructive")}
-                defaultValue={state.errors ? state.values?.name : ''}
               />
-              {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name.join(', ')}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
@@ -60,10 +97,7 @@ export default function NewProductPage() {
                 id="description"
                 name="description"
                 placeholder="A short, catchy description..."
-                className={cn(state.errors?.description && "border-destructive focus-visible:ring-destructive")}
-                defaultValue={state.errors ? state.values?.description : ''}
               />
-              {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description.join(', ')}</p>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -74,15 +108,12 @@ export default function NewProductPage() {
                         type="number"
                         step="0.01"
                         placeholder="e.g., 250"
-                        className={cn(state.errors?.price && "border-destructive focus-visible:ring-destructive")}
-                        defaultValue={state.errors ? state.values?.price : ''}
                     />
-                    {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price.join(', ')}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
-                    <Select name="category" defaultValue={state.errors ? state.values?.category : ''}>
-                        <SelectTrigger id="category" className={cn(state.errors?.category && "border-destructive focus:ring-destructive")}>
+                    <Select name="category" defaultValue="Perfumes">
+                        <SelectTrigger id="category">
                             <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -91,32 +122,17 @@ export default function NewProductPage() {
                             <SelectItem value="Creams">Creams</SelectItem>
                         </SelectContent>
                     </Select>
-                    {state.errors?.category && <p className="text-sm text-destructive">{state.errors.category.join(', ')}</p>}
                 </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Product Image</Label>
+              <Label htmlFor="image">Product Image Path</Label>
               <Input
                 id="image"
                 name="image"
-                type="file"
-                accept="image/png, image/jpeg, image/webp"
-                className={cn(state.errors?.image && "border-destructive focus-visible:ring-destructive")}
+                type="text"
+                placeholder="e.g., /perfume1.png (must be in public folder)"
               />
-              <p className="text-xs text-muted-foreground">Optional. Max file size: 5MB.</p>
-              {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image.join(', ')}</p>}
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="video">Product Video (Optional)</Label>
-              <Input
-                id="video"
-                name="video"
-                type="file"
-                accept="video/mp4, video/webm, video/ogg"
-                className={cn(state.errors?.video && "border-destructive focus-visible:ring-destructive")}
-              />
-               <p className="text-xs text-muted-foreground">Optional. Max file size: 5MB.</p>
-              {state.errors?.video && <p className="text-sm text-destructive">{state.errors.video.join(', ')}</p>}
+               <p className="text-xs text-muted-foreground">Instead of uploading, provide the path to an image located in the project's `public` folder.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataAiHint">Image AI Hint</Label>
@@ -124,49 +140,13 @@ export default function NewProductPage() {
                 id="dataAiHint"
                 name="dataAiHint"
                 placeholder="e.g., perfume bottle"
-                defaultValue={state.errors ? state.values?.dataAiHint : ''}
               />
               <p className="text-xs text-muted-foreground">Optional. One or two keywords for image search.</p>
             </div>
-            <div className="space-y-4 pt-4 border-t">
-                <p className="text-sm font-medium">Social Media Links (Optional)</p>
-                <div className="space-y-2">
-                    <Label htmlFor="instagram">Instagram</Label>
-                    <Input
-                        id="instagram"
-                        name="instagram"
-                        placeholder="https://instagram.com/your-page"
-                        className={cn(state.errors?.instagram && "border-destructive focus-visible:ring-destructive")}
-                        defaultValue={state.errors ? state.values?.instagram : ''}
-                    />
-                    {state.errors?.instagram && <p className="text-sm text-destructive">{state.errors.instagram.join(', ')}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="twitter">Twitter / X</Label>
-                    <Input
-                        id="twitter"
-                        name="twitter"
-                        placeholder="https://x.com/your-handle"
-                        className={cn(state.errors?.twitter && "border-destructive focus-visible:ring-destructive")}
-                        defaultValue={state.errors ? state.values?.twitter : ''}
-                    />
-                    {state.errors?.twitter && <p className="text-sm text-destructive">{state.errors.twitter.join(', ')}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="facebook">Facebook</Label>
-                    <Input
-                        id="facebook"
-                        name="facebook"
-                        placeholder="https://facebook.com/your-page"
-                        className={cn(state.errors?.facebook && "border-destructive focus-visible:ring-destructive")}
-                        defaultValue={state.errors ? state.values?.facebook : ''}
-                    />
-                    {state.errors?.facebook && <p className="text-sm text-destructive">{state.errors.facebook.join(', ')}</p>}
-                </div>
-            </div>
-            {state.message && <p className="text-sm text-destructive">{state.message}</p>}
             <div className="flex gap-4">
-                <SubmitButton />
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Adding Product...' : 'Add Product Locally'}
+                </Button>
                 <Button variant="outline" asChild><Link href="/dashboard/products">Cancel</Link></Button>
             </div>
           </form>

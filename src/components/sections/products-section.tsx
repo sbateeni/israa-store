@@ -32,26 +32,42 @@ export default function ProductsSection() {
     async function fetchProducts() {
       setLoading(true);
       setError(null);
+      let allFetchedProducts: Product[] = [];
+
+      // 1. Load from localStorage
+      try {
+        const localProductsJSON = localStorage.getItem('safaa-products');
+        if (localProductsJSON) {
+          allFetchedProducts.push(...JSON.parse(localProductsJSON));
+        }
+      } catch (e) {
+        console.warn("Could not parse local products", e);
+      }
+
+      // 2. Fetch from Firestore and fallback
       try {
         const querySnapshot = await getDocs(collection(db, "products"));
         if (querySnapshot.empty) {
-            setProducts(fallbackProducts); // Use fallback if firestore is empty
+            allFetchedProducts.push(...fallbackProducts); // Use fallback if firestore is empty
         } else {
-            const productsData = querySnapshot.docs.map(doc => ({
+            const firestoreProducts = querySnapshot.docs.map(doc => ({
               id: doc.id,
               ...doc.data(),
             })) as Product[];
-            setProducts(productsData);
+            allFetchedProducts.push(...firestoreProducts);
         }
       } catch (err: any) {
         console.error("Error fetching products: ", err);
         if (err.code === 'permission-denied') {
-          setError("Products could not be loaded due to a permission issue. Showing sample products instead.");
+          setError("Products could not be loaded from database due to a permission issue. Showing sample/local products instead.");
         } else {
-          setError("An error occurred while loading products. Showing sample products instead.");
+          setError("An error occurred while loading products from database. Showing sample/local products instead.");
         }
-        setProducts(fallbackProducts); // Use fallback on error
+        allFetchedProducts.push(...fallbackProducts); // Use fallback on error
       } finally {
+        // De-duplicate, giving preference to products that came first (local, then firestore)
+        const uniqueProducts = Array.from(new Map(allFetchedProducts.map(p => [p.name, p])).values());
+        setProducts(uniqueProducts);
         setLoading(false);
       }
     }

@@ -22,13 +22,26 @@ export default function ProductsPage() {
     async function fetchProducts() {
       setLoading(true);
       setError(null);
+      let combinedProducts: Product[] = [];
+
+      // 1. Load from localStorage
+      try {
+        const localProductsJSON = localStorage.getItem('safaa-products');
+        if (localProductsJSON) {
+          combinedProducts.push(...JSON.parse(localProductsJSON));
+        }
+      } catch (e) {
+        console.warn("Could not parse local products", e);
+      }
+      
+      // 2. Fetch from Firestore
       try {
         const querySnapshot = await getDocs(collection(db, 'products'));
-        const productsData = querySnapshot.docs.map(doc => ({
+        const firestoreProducts = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         })) as Product[];
-        setProducts(productsData);
+        combinedProducts.push(...firestoreProducts);
       } catch (err: any) {
         console.error("Error fetching products: ", err);
         if (err.code === 'permission-denied') {
@@ -37,6 +50,9 @@ export default function ProductsPage() {
           setError("An unexpected error occurred while fetching products.");
         }
       } finally {
+        // De-duplicate, preferring local ones if names clash
+        const uniqueProducts = Array.from(new Map(combinedProducts.map(p => [p.name, p])).values());
+        setProducts(uniqueProducts);
         setLoading(false);
       }
     }
@@ -50,7 +66,7 @@ export default function ProductsPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Products</CardTitle>
-              <CardDescription>Manage your products here.</CardDescription>
+              <CardDescription>Manage your products here. Locally added products are also shown.</CardDescription>
             </div>
             <Button asChild>
               <Link href="/dashboard/products/new">
