@@ -82,6 +82,15 @@ export const products: Product[] = [
     image: "https://placehold.co/600x600.png",
     dataAiHint: "traditional clothing"
   },
+  {
+    id: "p4",
+    name: "Golden Liberty",
+    description: "A bold and sophisticated fragrance celebrating freedom, with captivating notes of orange blossom, lavender, and rich amber.",
+    price: 150,
+    category: "Perfumes",
+    image: "https://placehold.co/600x600.png",
+    dataAiHint: "luxury perfume"
+  },
 ];
 
 export const testimonials: Testimonial[] = [
