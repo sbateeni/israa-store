@@ -1,9 +1,11 @@
 'use server';
 
 import { z } from 'zod';
-import { writeFile } from 'fs/promises';
+import { writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -21,7 +23,6 @@ const productSchema = z.object({
 
 type FormState = {
     message: string;
-    productCode?: string;
     isSuccess: boolean;
     errors?: {
         name?: string[];
@@ -32,7 +33,7 @@ type FormState = {
     }
 }
 
-export async function createProductCode(prevState: FormState, formData: FormData): Promise<FormState> {
+export async function addProduct(prevState: FormState, formData: FormData): Promise<FormState> {
     const validatedFields = productSchema.safeParse({
         name: formData.get('name'),
         description: formData.get('description'),
@@ -58,32 +59,54 @@ export async function createProductCode(prevState: FormState, formData: FormData
         const fileExtension = image.name.split('.').pop();
         const fileName = `${uuidv4()}.${fileExtension}`;
         const filePath = join(process.cwd(), 'public', 'products', fileName);
-
         await writeFile(filePath, buffer);
-
+        
         const imagePath = `/products/${fileName}`;
         
-        const productCode = `  {
-    id: "${uuidv4().substring(0,8)}",
+        const productsFilePath = join(process.cwd(), 'src', 'lib', 'products.ts');
+        const fileContent = await readFile(productsFilePath, 'utf-8');
+
+        const newProductObjectString = `  {
+    id: "${uuidv4().substring(0, 8)}",
     name: "${name.replace(/"/g, '\\"')}",
     description: "${description.replace(/"/g, '\\"')}",
     price: ${price},
     category: "${category}",
     image: "${imagePath}",
     dataAiHint: "user uploaded"
-  },`;
+  }`;
 
-        return {
-            message: 'Success! Copy the code below and add it to your products file.',
-            isSuccess: true,
-            productCode: productCode,
-        };
+        const productsRegex = /(export const products: Product\[\] = \[)([\s\S]*?)(\];)/;
+        const match = fileContent.match(productsRegex);
+
+        if (!match) {
+            throw new Error("Could not match the products array structure in src/lib/products.ts. Please ensure it is defined as 'export const products: Product[] = [...]'.");
+        }
+
+        const arrayStart = match[1];
+        let arrayContent = match[2].trim();
+        const arrayEnd = match[3];
+
+        if (arrayContent && !arrayContent.endsWith(',')) {
+            arrayContent += ',';
+        }
+
+        const newArrayContent = `${arrayContent}\n${newProductObjectString}`;
+        const updatedArrayString = `${arrayStart}\n${newArrayContent}\n${arrayEnd}`;
+        const updatedFileContent = fileContent.replace(productsRegex, updatedArrayString);
+        
+        await writeFile(productsFilePath, updatedFileContent, 'utf-8');
 
     } catch (error) {
         console.error('Failed to process product:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
         return {
-            message: 'An unexpected error occurred while processing the image. Please try again.',
+            message: `An unexpected error occurred: ${errorMessage}`,
             isSuccess: false,
         };
     }
+
+    revalidatePath('/dashboard/products');
+    revalidatePath('/');
+    redirect('/dashboard/products');
 }

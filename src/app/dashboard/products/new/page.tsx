@@ -10,26 +10,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Copy } from 'lucide-react';
-import { createProductCode } from '../actions';
-import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft } from 'lucide-react';
+import { addProduct } from '../actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className="w-full">
-      {pending ? 'Generating Code...' : 'Generate Product Code'}
+      {pending ? 'Adding Product...' : 'Add Product to Store'}
     </Button>
   );
 }
 
 export default function NewProductPage() {
   const initialState = { message: '', isSuccess: false, errors: {} };
-  const [state, formAction] = useActionState(createProductCode, initialState);
+  const [state, formAction] = useActionState(addProduct, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,57 +41,6 @@ export default function NewProductPage() {
         setPreview(null);
     }
   };
-
-  const handleCopy = () => {
-    if (state.productCode) {
-      navigator.clipboard.writeText(state.productCode);
-      toast({ title: 'Copied!', description: 'Product code copied to clipboard.' });
-    }
-  };
-  
-  if (state.isSuccess && state.productCode) {
-    return (
-        <div className="container py-10">
-            <Card className="max-w-3xl mx-auto">
-                <CardHeader>
-                    <CardTitle>Product Code Generated Successfully!</CardTitle>
-                    <CardDescription>Follow these steps to add your new product to the store.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label>Step 1: Copy the generated code</Label>
-                        <div className="relative">
-                            <pre className="bg-secondary p-4 rounded-md text-secondary-foreground overflow-x-auto text-sm">
-                                <code>{state.productCode}</code>
-                            </pre>
-                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7" onClick={handleCopy}>
-                                <Copy className="h-4 w-4"/>
-                            </Button>
-                        </div>
-                    </div>
-                     <div className="space-y-2">
-                        <Label>Step 2: Add the code to your products file</Label>
-                         <Alert>
-                            <AlertTitle>Open File</AlertTitle>
-                            <AlertDescription>
-                                Navigate to the file <code className="font-mono bg-secondary px-1 py-0.5 rounded">src/lib/products.ts</code> in your editor.
-                            </AlertDescription>
-                        </Alert>
-                        <Alert>
-                            <AlertTitle>Paste Code</AlertTitle>
-                            <AlertDescription>
-                                Find the <code className="font-mono bg-secondary px-1 py-0.5 rounded">products</code> array and paste the copied code inside it.
-                            </AlertDescription>
-                        </Alert>
-                    </div>
-                    <Button onClick={() => window.location.reload()} className="w-full">
-                        Add Another Product
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
 
   return (
     <div className="container py-10">
@@ -109,7 +56,7 @@ export default function NewProductPage() {
         <CardHeader>
           <CardTitle>Add New Product</CardTitle>
           <CardDescription>
-            This form will upload your image and generate the code snippet to add to your products file.
+            Fill out the form below to add a new product directly to your store.
           </CardDescription>
         </CardHeader>
         <CardContent>
