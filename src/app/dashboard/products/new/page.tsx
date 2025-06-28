@@ -1,10 +1,9 @@
-
 'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Lightbulb } from 'lucide-react';
 
 export default function NewProductPage() {
 
@@ -12,9 +11,9 @@ export default function NewProductPage() {
     <div className="container py-10">
       <div className="mb-4">
         <Button variant="outline" size="sm" asChild>
-          <Link href="/dashboard">
+          <Link href="/dashboard/products">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            Back to Products
           </Link>
         </Button>
       </div>
@@ -22,13 +21,22 @@ export default function NewProductPage() {
         <CardHeader>
           <CardTitle>Add a Product</CardTitle>
           <CardDescription>
-            Product management is now handled directly in the code. To add a new product, please edit the file at `src/lib/products.ts`.
+            Product management is now handled directly in code.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-              <Button variant="outline" asChild><Link href="/dashboard">Return to Dashboard</Link></Button>
-          </div>
+            <div className="p-6 bg-secondary/50 rounded-lg flex items-start gap-4">
+                <Lightbulb className="h-6 w-6 text-primary mt-1"/>
+                <div>
+                    <h3 className="font-semibold">How to Add a New Product</h3>
+                    <p className="text-muted-foreground mt-2">
+                        To add a new product, please open the file <code className="font-mono bg-muted px-1 py-0.5 rounded">src/lib/products.ts</code> and add a new entry to the `products` array.
+                    </p>
+                    <Button variant="secondary" className="mt-4" asChild>
+                        <Link href="/dashboard">View Full Instructions</Link>
+                    </Button>
+                </div>
+            </div>
         </CardContent>
       </Card>
     </div>
