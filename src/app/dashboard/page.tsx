@@ -10,7 +10,7 @@ export default function DashboardPage() {
                 <div className="text-center">
                     <h1 className="text-3xl font-bold">Product Management</h1>
                     <p className="text-muted-foreground">
-                        All products are now managed directly inside your project's code.
+                        All products are now managed directly inside your project&apos;s code.
                     </p>
                 </div>
 
@@ -39,7 +39,7 @@ export default function DashboardPage() {
                         <CardContent className="space-y-2 text-sm text-muted-foreground">
                            <p>1. Add your new image to the <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">public/products</code> folder.</p>
                            <p>2. Open <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">src/lib/products.ts</code>.</p>
-                           <p>3. Copy an existing product object, paste it, and update its `id`, `name`, `price`, and `image` path (e.g., `'/products/your-image.jpg'`).</p>
+                           <p>3. Copy an existing product object, paste it, and update its `id`, `name`, `price`, and `image` path (e.g., <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">&apos;/products/your-image.jpg&apos;</code>).</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -59,7 +59,7 @@ export default function DashboardPage() {
                         <CardContent className="space-y-2 text-sm text-muted-foreground">
                            <p>1. Open <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">src/lib/products.ts</code>.</p>
                            <p>2. Find the product object you want to remove.</p>
-                           <p>3. Delete the entire object from the array, including the curly braces `{...}` and the comma after it.</p>
+                           <p>3. Delete the entire object from the array, including the curly braces <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{`{...}`}</code> and the comma after it.</p>
                         </CardContent>
                     </Card>
                 </div>
