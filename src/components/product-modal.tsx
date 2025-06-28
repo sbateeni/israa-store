@@ -60,7 +60,17 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                 />
               )}
             </div>
-            <div className="flex justify-center items-center gap-4">
+          </div>
+          <div className="flex flex-col">
+            <DialogHeader>
+              <p className="text-sm text-muted-foreground">{product.category}</p>
+              <DialogTitle className="text-2xl font-headline">{product.name}</DialogTitle>
+            </DialogHeader>
+            <p className="text-2xl font-bold text-primary my-4">{product.price} ₪</p>
+            <DialogDescription className="text-base flex-grow">
+              {product.description}
+            </DialogDescription>
+            <div className="flex justify-start items-center gap-2 mt-4">
               {product.instagram && (
                 <Button variant="ghost" size="icon" asChild>
                     <a href={product.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
@@ -83,16 +93,6 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                 </Button>
               )}
             </div>
-          </div>
-          <div className="flex flex-col">
-            <DialogHeader>
-              <p className="text-sm text-muted-foreground">{product.category}</p>
-              <DialogTitle className="text-2xl font-headline">{product.name}</DialogTitle>
-            </DialogHeader>
-            <p className="text-2xl font-bold text-primary my-4">{product.price} ₪</p>
-            <DialogDescription className="text-base flex-grow">
-              {product.description}
-            </DialogDescription>
             <DialogFooter className="mt-4">
               <Button className="w-full" onClick={handleAddToCart}>Add to Cart</Button>
             </DialogFooter>
