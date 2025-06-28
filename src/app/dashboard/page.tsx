@@ -1,7 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Package } from "lucide-react";
-import Link from "next/link";
+import { Lightbulb } from "lucide-react";
 
 export default function DashboardPage() {
     return (
@@ -9,42 +7,22 @@ export default function DashboardPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Dashboard</CardTitle>
-                    <CardDescription>Manage your store from here.</CardDescription>
+                    <CardDescription>Product management is now handled directly in the code.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    Manage Products
-                                </CardTitle>
-                                <Package className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground">
-                                    Add, edit, and view your store's products.
-                                </p>
-                            </CardContent>
-                            <div className="p-6 pt-0">
-                                <Button asChild>
-                                    <Link href="/dashboard/products">Go to Products</Link>
-                                </Button>
-                            </div>
-                        </Card>
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    Coming Soon
-                                </CardTitle>
-                                <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground">
-                                   Order management and analytics are on the way.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Code-Based Management
+                            </CardTitle>
+                            <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-xs text-muted-foreground">
+                               To add, edit, or remove products, please modify the file at `src/lib/products.ts`.
+                            </p>
+                        </CardContent>
+                    </Card>
                 </CardContent>
             </Card>
         </div>

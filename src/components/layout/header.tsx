@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -30,9 +31,6 @@ export default function Header() {
           <Link href={link.href} onClick={() => setMobileMenuOpen(false)}>{link.label}</Link>
         </Button>
       ))}
-      <Button variant="link" asChild className="text-foreground hover:no-underline">
-        <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="bg-primary/20 text-primary-foreground hover:bg-primary/30 font-bold px-4 py-2 rounded-md">{t("nav.dashboard")}</Link>
-      </Button>
     </>
   );
 
