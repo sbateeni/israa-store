@@ -3,7 +3,7 @@ import type { Product, Testimonial } from "@/types";
 // Note: This file now serves as a fallback or for initial data.
 // All active product management is now handled through the dashboard and Firebase.
 export const products: Product[] = [
-  {
+{
     id: "p1",
     name: "Golden Dust",
     description: "An exotic and warm fragrance with hints of amber and vanilla.",
@@ -94,6 +94,15 @@ export const products: Product[] = [
     image: "https://placehold.co/600x600.png",
     dataAiHint: "traditional clothing"
   },
+  {
+    id: "18917b9e",
+    name: "sbate",
+    description: "dfwesfvwrtg 42353",
+    price: 123,
+    category: "Apparel",
+    image: "/products/f79df633-87af-46c6-92d2-e7190a1325f0.jfif",
+    dataAiHint: "user uploaded"
+  }
 ];
 
 export const testimonials: Testimonial[] = [
