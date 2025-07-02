@@ -3,7 +3,14 @@ import type { Product } from "@/types";
 // Note: This file now serves as a fallback or for initial data.
 // All active product management is now handled through the dashboard and Firebase.
 export const products: Product[] = [
-  // سيتم توليد المنتجات تلقائيًا من ملف JSON
+  {
+    id: "demo1",
+    name: "منتج تجريبي",
+    description: "هذا منتج وهمي للعرض فقط.",
+    price: 99.99,
+    category: "تجريبي",
+    image: "/products/3614273069540_.jpg"
+  }
 ];
 
 export const testimonials: Testimonial[] = [
