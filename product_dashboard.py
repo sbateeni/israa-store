@@ -115,6 +115,19 @@ def on_product_select(event):
     category_var.set(prod['category'])
     image_var.set(os.path.join(IMAGES_DIR, os.path.basename(prod['image'])))
 
+def reload_products():
+    global products
+    if os.path.exists(PRODUCTS_JSON):
+        with open(PRODUCTS_JSON, 'r', encoding='utf-8') as f:
+            try:
+                products = json.load(f)
+            except json.JSONDecodeError:
+                products = []
+    else:
+        products = []
+    update_product_list()
+    clear_fields()
+
 # إعداد نافذة Tkinter
 root = Tk()
 root.title('لوحة تحكم المنتجات')
@@ -145,6 +158,7 @@ Button(frm, text='اختيار صورة', command=select_image).grid(row=4, colu
 
 Button(frm, text='إضافة منتج', command=add_product, bg='#4caf50', fg='white').grid(row=5, column=1, pady=10)
 Button(frm, text='حذف المنتج المحدد', command=delete_product, bg='#f44336', fg='white').grid(row=5, column=2, pady=10)
+Button(frm, text='تحديث القائمة', command=reload_products, bg='#2196f3', fg='white').grid(row=5, column=0, pady=10)
 
 # قائمة المنتجات
 cols = ('ID', 'الاسم', 'التصنيف', 'السعر')
