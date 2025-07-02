@@ -29,6 +29,14 @@ export const products: Product[] = [
     price: 49.5,
     category: "تجريبي",
     image: "/products/1.jpg"
+  }),
+  withDefaultSocials({
+    id: "demo3",
+    name: "منتج تجريبي 3",
+    description: "منتج تجريبي ثالث مع نفس صورة المنتج الأول.",
+    price: 75.0,
+    category: "تجريبي",
+    image: "/products/3614273069540_.jpg"
   })
   // أضف منتجات أخرى هنا بنفس الطريقة، وستضاف لها روابط التواصل تلقائيًا إذا لم تضعها
 ];
