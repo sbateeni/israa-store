@@ -3,6 +3,11 @@ import type { Product } from "@/types";
 // Note: This file now serves as a fallback or for initial data.
 // All active product management is now handled through the dashboard and Firebase.
 
+type Testimonial = {
+  quote: string;
+  author: string;
+};
+
 function withDefaultSocials(product: Omit<Product, 'facebook' | 'instagram' | 'snapchat' | 'whatsapp'> & Partial<Pick<Product, 'facebook' | 'instagram' | 'snapchat' | 'whatsapp'>>): Product {
   return {
     facebook: "https://facebook.com",
@@ -19,7 +24,7 @@ export const products: Product[] = [
     name: "منتج تجريبي",
     description: "هذا منتج وهمي للعرض فقط.",
     price: 99.99,
-    category: "تجريبي",
+    category: "Perfumes",
     image: "/products/3614273069540_.jpg"
   }),
   withDefaultSocials({
@@ -27,18 +32,9 @@ export const products: Product[] = [
     name: "منتج تجريبي 2",
     description: "منتج تجريبي آخر مع صورة مختلفة.",
     price: 49.5,
-    category: "تجريبي",
+    category: "Perfumes",
     image: "/products/1.jpg"
-  }),
-  withDefaultSocials({
-    id: "demo3",
-    name: "منتج تجريبي 3",
-    description: "منتج تجريبي ثالث مع نفس صورة المنتج الأول.",
-    price: 75.0,
-    category: "تجريبي",
-    image: "/products/3614273069540_.jpg"
   })
-  // أضف منتجات أخرى هنا بنفس الطريقة، وستضاف لها روابط التواصل تلقائيًا إذا لم تضعها
 ];
 
 export const testimonials: Testimonial[] = [
