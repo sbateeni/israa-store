@@ -20,16 +20,13 @@ function withDefaultSocials(product: Omit<Product, 'facebook' | 'instagram' | 's
 
 export const products: Product[] = [
   withDefaultSocials({
-    id: "demo1",
-    name: "منتج تجريبي",
-    description: "هذا منتج وهمي للعرض فقط.",
-    price: 99.99,
+    name: "1يسب",
+    description: "1312",
+    price: "11111.0",
     category: "Perfumes",
-    image: "/products/3614273069540_.jpg",
-    images: [
-      "/products/3614273069540_.jpg",
-      "/products/1.jpg"
-    ]
+    id: "1",
+    image: "/products/images (2).jfif",
+    images: ['/products/images (2).jfif']
   })
 ];
 

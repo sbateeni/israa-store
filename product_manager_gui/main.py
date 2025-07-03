@@ -83,16 +83,10 @@ class ProductManagerApp(tk.Tk):
         if not all(prod.values()):
             messagebox.showerror("خطأ", "يرجى تعبئة جميع الحقول.")
             return
-        # تحقق من تكرار id
-        if any(p["id"] == prod["id"] for p in self.products):
-            messagebox.showerror("خطأ", "معرّف المنتج مستخدم مسبقًا.")
-            return
         # توليد id متسلسل تلقائي
-        if self.products:
-            last_id = max(int(p["id"]) for p in self.products if p["id"].isdigit())
-            new_id = str(last_id + 1)
-        else:
-            new_id = "1"
+        ids = [int(p.get("id", 0)) for p in self.products if str(p.get("id", "")).isdigit()]
+        last_id = max(ids) if ids else 0
+        new_id = str(last_id + 1)
         prod["id"] = new_id
         # نسخ الوسائط
         if self.selected_media_path:

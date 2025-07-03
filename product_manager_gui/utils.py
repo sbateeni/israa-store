@@ -41,7 +41,10 @@ def write_products(products):
     for prod in products:
         products_str += "  withDefaultSocials({\n"
         for k, v in prod.items():
-            products_str += f'    {k}: "{v}",\n'
+            if k == "images" and v.startswith("[") and v.endswith("]"):
+                products_str += f'    {k}: {v},\n'
+            else:
+                products_str += f'    {k}: "{v}",\n'
         products_str = products_str.rstrip(",\n") + "\n  }),\n"
     products_str = products_str.rstrip(",\n") + "\n];"
     with open(PRODUCTS_FILE, "w", encoding="utf-8") as f:
@@ -51,6 +54,13 @@ def copy_media(file_path):
     if not os.path.exists(MEDIA_DIR):
         os.makedirs(MEDIA_DIR)
     filename = os.path.basename(file_path)
+    name, ext = os.path.splitext(filename)
     dest = os.path.join(MEDIA_DIR, filename)
+    counter = 1
+    # إذا كان الملف موجودًا، أضف رقمًا تسلسليًا للاسم
+    while os.path.exists(dest):
+        filename = f"{name}_{counter}{ext}"
+        dest = os.path.join(MEDIA_DIR, filename)
+        counter += 1
     shutil.copy2(file_path, dest)
     return f"/products/{filename}" 
