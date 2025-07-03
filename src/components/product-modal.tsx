@@ -14,6 +14,7 @@ import { Button } from "./ui/button";
 import { useCart } from "@/contexts/cart-provider";
 import { useToast } from "@/hooks/use-toast";
 import { Instagram, Facebook } from "lucide-react";
+import { useState } from "react";
 
 const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -40,17 +41,22 @@ interface ProductModalProps {
 export default function ProductModal({ product, onOpenChange }: ProductModalProps) {
   const { addItem, setCartOpen } = useCart();
   const { toast } = useToast();
+  const [imgIdx, setImgIdx] = useState(0);
 
   if (!product) return null;
 
   const handleAddToCart = () => {
     addItem(product);
     toast({
-      title: `${product.name} added to cart!`,
+      title: `تمت إضافة المنتج إلى السلة بنجاح!`,
+      description: `تمت إضافة ${product.name} إلى سلة مشترياتك.`,
     });
     onOpenChange(false);
     setCartOpen(true);
   }
+
+  const images = product.images && product.images.length > 0 ? product.images : product.image ? [product.image] : [];
+  const safeImages = images.filter((img): img is string => typeof img === 'string');
 
   return (
     <Dialog open={!!product} onOpenChange={onOpenChange}>
@@ -67,16 +73,30 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                   muted
                   className="w-full h-full object-cover rounded-md"
                 />
-              ) : (
+              ) : safeImages.length > 0 ? (
                 <Image
-                  src={product.image}
+                  src={safeImages[imgIdx]}
                   alt={product.name}
                   fill
                   className="object-cover rounded-md"
                   data-ai-hint={product.dataAiHint}
                 />
-              )}
+              ) : null}
             </div>
+            {safeImages.length > 1 && (
+              <div className="flex gap-2 mt-2 justify-center">
+                {safeImages.map((img, idx) => (
+                  <button
+                    key={img}
+                    type="button"
+                    className={`border rounded-md overflow-hidden w-14 h-14 relative ${imgIdx === idx ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setImgIdx(idx)}
+                  >
+                    <Image src={img} alt={product.name + ' thumbnail'} fill className="object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex flex-col">
             <DialogHeader>

@@ -7,6 +7,7 @@ export type Product = {
   price?: number;
   category?: ProductCategory;
   image?: string;
+  images?: string[];
   video?: string;
   dataAiHint?: string;
   instagram?: string;

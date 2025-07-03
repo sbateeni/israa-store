@@ -98,8 +98,10 @@ class ProductManagerApp(tk.Tk):
         if self.selected_media_path:
             media_path = copy_media(self.selected_media_path)
             prod["image"] = media_path
+            prod["images"] = f'[{repr(media_path)}]'
         else:
             prod["image"] = ""
+            prod["images"] = "[]"
         self.products.append(prod)
         write_products(self.products)
         self.selected_media_path = None
