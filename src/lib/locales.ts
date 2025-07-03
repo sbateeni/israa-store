@@ -6,7 +6,6 @@ export const locales = {
       products: "Our Products",
       testimonials: "Testimonials",
       contact: "Contact Us",
-      dashboard: "Dashboard",
     },
     hero: {
       title: "Elegance & Sophistication",
@@ -58,7 +57,6 @@ export const locales = {
       products: "منتجاتنا",
       testimonials: "آراء العملاء",
       contact: "تواصل معنا",
-      dashboard: "لوحة التحكم",
     },
     hero: {
       title: "أناقة ورقي",
