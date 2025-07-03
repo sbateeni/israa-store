@@ -23,17 +23,9 @@ export const products: Product[] = [
     id: "demo1",
     name: "منتج تجريبي",
     description: "هذا منتج وهمي للعرض فقط.",
-    price: 99.99,
+    price: "99.99",
     category: "Perfumes",
     image: "/products/3614273069540_.jpg"
-  }),
-  withDefaultSocials({
-    id: "demo2",
-    name: "منتج تجريبي 2",
-    description: "منتج تجريبي آخر مع صورة مختلفة.",
-    price: 49.5,
-    category: "Perfumes",
-    image: "/products/1.jpg"
   })
 ];
 

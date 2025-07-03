@@ -1,33 +1,10 @@
 import os
 import re
 import shutil
-from tkinter import messagebox, filedialog, Tk
-import json
+from tkinter import messagebox
 
 # احصل على مسار مجلد product_manager_gui بغض النظر عن مكان التشغيل
-GUI_DIR = os.path.dirname(os.path.abspath(__file__))
-
-CONFIG_FILE = os.path.join(GUI_DIR, "config.json")
-
-def get_project_base():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            base = data.get("project_base")
-            if base and os.path.exists(os.path.join(base, "src", "lib", "products.ts")):
-                return base
-    # اطلب من المستخدم اختيار مجلد المشروع
-    root = Tk()
-    root.withdraw()
-    base = filedialog.askdirectory(title="اختر مجلد مشروع israa-store (الذي يحتوي src و public)")
-    root.destroy()
-    if base:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump({"project_base": base}, f)
-        return base
-    raise FileNotFoundError("لم يتم تحديد مجلد مشروع صحيح.")
-
-BASE_DIR = get_project_base()
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PRODUCTS_FILE = os.path.join(BASE_DIR, "src", "lib", "products.ts")
 MEDIA_DIR = os.path.join(BASE_DIR, "public", "products")
 
