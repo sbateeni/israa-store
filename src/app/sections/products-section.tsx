@@ -3,9 +3,9 @@
 import React, { useState, useMemo } from 'react';
 import { useLocale } from '@/contexts/locale-provider';
 import type { ProductCategory, Product } from '@/types';
-import ProductCard from '../product-card';
+import ProductCard from '@/components/product-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import ProductModal from '../product-modal';
+import ProductModal from '@/components/product-modal';
 import { products } from '@/lib/products';
 
 export default function ProductsSection() {
@@ -15,7 +15,7 @@ export default function ProductsSection() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const categories = useMemo(
-    () => Array.from(new Set(products.map((p) => p.category).filter(Boolean))),
+    () => Array.from(new Set(products.map((p) => p.category).filter((cat): cat is ProductCategory => typeof cat === 'string'))),
     []
   );
 
@@ -44,7 +44,7 @@ export default function ProductsSection() {
           <SelectContent>
             <SelectItem value="all">{t('products.all')}</SelectItem>
             {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
+              <SelectItem key={cat} value={cat as ProductCategory}>
                 {cat}
               </SelectItem>
             ))}
