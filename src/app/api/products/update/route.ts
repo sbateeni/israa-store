@@ -15,6 +15,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ success: true, url: blob.url });
   } catch (e) {
-    return NextResponse.json({ error: 'فشل تحديث المنتجات' }, { status: 500 });
+    return NextResponse.json({ error: 'فشل تحديث المنتجات', details: String(e) }, { status: 500 });
   }
 } 

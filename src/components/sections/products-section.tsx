@@ -1,8 +1,8 @@
 "use client";
 
-import { products } from "@/lib/products";
+import { products as staticProducts } from "@/lib/products";
 import { useLocale } from "@/contexts/locale-provider";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import ProductCard from "../product-card";
 import { ProductCategory, Product } from "@/types";
 import {
@@ -20,10 +20,29 @@ export default function ProductsSection() {
   const [selectedCategory, setSelectedCategory] =
     useState<ProductCategory | "all">("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/products")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setProducts(data);
+        else setProducts([]);
+        setLoading(false);
+      })
+      .catch(() => {
+        setProducts(staticProducts); // fallback
+        setError("تعذر تحميل المنتجات");
+        setLoading(false);
+      });
+  }, []);
 
   const categories = useMemo(
-    () => Array.from(new Set(products.map((p) => p.category))),
-    []
+    () => Array.from(new Set(products.map((p) => p.category).filter((cat): cat is ProductCategory => typeof cat === 'string'))),
+    [products]
   );
 
   const filteredProducts = useMemo(() => {
@@ -31,7 +50,7 @@ export default function ProductsSection() {
       return products;
     }
     return products.filter((p) => p.category === selectedCategory);
-  }, [selectedCategory]);
+  }, [selectedCategory, products]);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -62,13 +81,21 @@ export default function ProductsSection() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {filteredProducts.map((product) => (
-        <ProductCard 
-            key={product.id} 
-            product={product} 
-            onViewDetails={() => handleProductClick(product)}
-            />
-        ))}
+        {loading ? (
+          <p>جاري تحميل المنتجات...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : filteredProducts.length === 0 ? (
+          <p>لا توجد منتجات.</p>
+        ) : (
+          filteredProducts.map((product) => (
+            <ProductCard 
+                key={product.id} 
+                product={product} 
+                onViewDetails={() => handleProductClick(product)}
+                />
+          ))
+        )}
       </div>
       <ProductModal product={selectedProduct} onOpenChange={(isOpen) => !isOpen && setSelectedProduct(null)}/>
     </section>

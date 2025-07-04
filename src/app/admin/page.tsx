@@ -15,6 +15,12 @@ export default function AdminPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [productForm, setProductForm] = useState<any>({ name: "", description: "", price: "", category: "", id: "", image: "", images: [] });
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [productFile, setProductFile] = useState<File | null>(null);
+
+  // --- روابط التواصل الاجتماعي العامة ---
+  const [socials, setSocials] = useState({ facebook: "", instagram: "", snapchat: "", whatsapp: "" });
+  const [socialsLoading, setSocialsLoading] = useState(false);
+  const [socialsMsg, setSocialsMsg] = useState("");
 
   // جلب الملفات
   useEffect(() => {
@@ -30,6 +36,18 @@ export default function AdminPage() {
     }
   }, [loading, authed]);
 
+  // جلب الروابط عند الدخول
+  useEffect(() => {
+    if (authed) {
+      setSocialsLoading(true);
+      fetch("/api/socials")
+        .then(res => res.json())
+        .then(data => setSocials(data))
+        .catch(() => setSocials({ facebook: "", instagram: "", snapchat: "", whatsapp: "" }))
+        .finally(() => setSocialsLoading(false));
+    }
+  }, [authed]);
+
   // رفع ملف
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,12 +57,19 @@ export default function AdminPage() {
     const formData = new FormData();
     formData.append("file", file);
     const res = await fetch("/api/upload", { method: "POST", body: formData });
-    if (res.ok) {
+    const data = await res.json();
+    if (res.ok && data.url) {
       setFile(null);
       setLoading(false);
-      setTimeout(() => setLoading(false), 500);
+      // تحديث قائمة الملفات مباشرة بعد الرفع
+      fetch("/api/files")
+        .then(res => res.json())
+        .then(data => Array.isArray(data) ? setFiles(data) : setFiles([]));
+      // إشعار المستخدم بالنجاح
+      setError("تم رفع الملف بنجاح");
+      setTimeout(() => setError(""), 2000);
     } else {
-      setError("فشل رفع الملف");
+      setError(data?.error || "فشل رفع الملف");
       setLoading(false);
     }
   };
@@ -77,15 +102,34 @@ export default function AdminPage() {
   // حفظ منتج (جديد أو تعديل)
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+    let imageUrl = productForm.image;
+    // إذا تم اختيار ملف صورة جديد، ارفعه أولاً
+    if (productFile) {
+      const formData = new FormData();
+      formData.append("file", productFile);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        imageUrl = data.url;
+      } else {
+        setError(data?.error || "فشل رفع الصورة");
+        setLoading(false);
+        return;
+      }
+    }
     let newProducts = [...products];
     if (editingIndex !== null) {
-      newProducts[editingIndex] = productForm;
+      newProducts[editingIndex] = { ...productForm, image: imageUrl };
     } else {
-      newProducts.push({ ...productForm, id: Date.now().toString() });
+      newProducts.push({ ...productForm, id: Date.now().toString(), image: imageUrl });
     }
     await updateProducts(newProducts);
     setProductForm({ name: "", description: "", price: "", category: "", id: "", image: "", images: [] });
+    setProductFile(null);
     setEditingIndex(null);
+    setLoading(false);
   };
 
   // تحديث المنتجات في Blob Store
@@ -106,6 +150,27 @@ export default function AdminPage() {
     }
   };
 
+  // حفظ الروابط
+  const handleSaveSocials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSocialsLoading(true);
+    setSocialsMsg("");
+    // توليد رابط واتساب من الرقم فقط
+    const socialsToSave = { ...socials, whatsapp: socials.whatsapp ? `https://wa.me/${socials.whatsapp.replace(/[^0-9]/g, "")}` : "" };
+    const res = await fetch("/api/socials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(socialsToSave)
+    });
+    if (res.ok) {
+      setSocialsMsg("تم حفظ الروابط بنجاح");
+    } else {
+      setSocialsMsg("فشل حفظ الروابط");
+    }
+    setSocialsLoading(false);
+    setTimeout(() => setSocialsMsg("") , 2000);
+  };
+
   if (!authed) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -121,13 +186,14 @@ export default function AdminPage() {
 
   return (
     <div className="container py-8">
-      <h2 className="text-2xl font-bold mb-6">لوحة تحكم الملفات</h2>
+      {/* حذف لوحة رفع الملفات المنفصلة */}
+      {/* <h2 className="text-2xl font-bold mb-6">لوحة تحكم الملفات</h2>
       <form onSubmit={handleUpload} className="mb-6 flex gap-4 items-center">
         <input type="file" value="" onChange={e => setFile(e.target.files?.[0] || null)} className="border px-3 py-2 rounded" />
         <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded" disabled={loading}>رفع</button>
-      </form>
+      </form> */}
       {error && <p className="text-red-500 mb-4">{error}</p>}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
         {files.length === 0 && <p>لا توجد ملفات.</p>}
         {files.map((f: any) => (
           <div key={f.pathname} className="border rounded p-4 flex flex-col gap-2">
@@ -137,7 +203,7 @@ export default function AdminPage() {
             <button onClick={() => handleDelete(f.pathname)} className="bg-red-500 text-white px-3 py-1 rounded mt-2" disabled={loading}>حذف</button>
           </div>
         ))}
-      </div>
+      </div> */}
 
       <h2 className="text-2xl font-bold mb-6">إدارة المنتجات</h2>
       <form onSubmit={handleSaveProduct} className="mb-6 flex flex-wrap gap-4 items-center">
@@ -145,10 +211,19 @@ export default function AdminPage() {
         <input type="text" placeholder="الوصف" value={productForm.description} onChange={e => setProductForm({ ...productForm, description: e.target.value })} className="border px-3 py-2 rounded" required />
         <input type="text" placeholder="السعر" value={productForm.price} onChange={e => setProductForm({ ...productForm, price: e.target.value })} className="border px-3 py-2 rounded" required />
         <input type="text" placeholder="التصنيف" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} className="border px-3 py-2 rounded" required />
-        <input type="text" placeholder="رابط الصورة الرئيسية" value={productForm.image} onChange={e => setProductForm({ ...productForm, image: e.target.value })} className="border px-3 py-2 rounded" />
+        {/* حقل اختيار صورة المنتج */}
+        <input type="file" accept="image/*,video/*" onChange={e => setProductFile(e.target.files?.[0] || null)} className="border px-3 py-2 rounded" />
+        {/* عرض اسم الملف المختار */}
+        {productFile && <span className="text-xs text-gray-500">{productFile.name}</span>}
+        {/* حقل روابط صور إضافية (اختياري) */}
         <input type="text" placeholder="روابط صور إضافية (مفصولة بفاصلة)" value={productForm.images?.join(",") || ""} onChange={e => setProductForm({ ...productForm, images: e.target.value.split(",") })} className="border px-3 py-2 rounded" />
+        {/* حقول روابط التواصل الاجتماعي */}
+        <input type="text" placeholder="رابط فيسبوك (اختياري)" value={productForm.facebook || ""} onChange={e => setProductForm({ ...productForm, facebook: e.target.value })} className="border px-3 py-2 rounded" />
+        <input type="text" placeholder="رابط إنستجرام (اختياري)" value={productForm.instagram || ""} onChange={e => setProductForm({ ...productForm, instagram: e.target.value })} className="border px-3 py-2 rounded" />
+        <input type="text" placeholder="رابط سناب شات (اختياري)" value={productForm.snapchat || ""} onChange={e => setProductForm({ ...productForm, snapchat: e.target.value })} className="border px-3 py-2 rounded" />
+        <input type="text" placeholder="رابط واتساب (اختياري)" value={productForm.whatsapp || ""} onChange={e => setProductForm({ ...productForm, whatsapp: e.target.value })} className="border px-3 py-2 rounded" />
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded" disabled={loading}>{editingIndex !== null ? "تعديل المنتج" : "إضافة منتج"}</button>
-        {editingIndex !== null && <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setProductForm({ name: "", description: "", price: "", category: "", id: "", image: "", images: [] }); setEditingIndex(null); }}>إلغاء</button>}
+        {editingIndex !== null && <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setProductForm({ name: "", description: "", price: "", category: "", id: "", image: "", images: [] }); setProductFile(null); setEditingIndex(null); }}>إلغاء</button>}
       </form>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {products.length === 0 && <p>لا توجد منتجات.</p>}
@@ -166,6 +241,19 @@ export default function AdminPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* قسم إدارة روابط التواصل الاجتماعي */}
+      <div className="mb-8 p-4 border rounded-lg bg-gray-50">
+        <h2 className="text-xl font-bold mb-4">روابط التواصل الاجتماعي العامة</h2>
+        <form onSubmit={handleSaveSocials} className="flex flex-wrap gap-4 items-center">
+          <input type="text" placeholder="رابط فيسبوك" value={socials.facebook} onChange={e => setSocials({ ...socials, facebook: e.target.value })} className="border px-3 py-2 rounded" />
+          <input type="text" placeholder="رابط إنستجرام" value={socials.instagram} onChange={e => setSocials({ ...socials, instagram: e.target.value })} className="border px-3 py-2 rounded" />
+          <input type="text" placeholder="رابط سناب شات" value={socials.snapchat} onChange={e => setSocials({ ...socials, snapchat: e.target.value })} className="border px-3 py-2 rounded" />
+          <input type="text" placeholder="رقم واتساب (بدون +)" value={socials.whatsapp} onChange={e => setSocials({ ...socials, whatsapp: e.target.value })} className="border px-3 py-2 rounded" />
+          <button type="submit" className="bg-primary text-white px-4 py-2 rounded" disabled={socialsLoading}>حفظ الروابط</button>
+        </form>
+        {socialsMsg && <p className="mt-2 text-green-600">{socialsMsg}</p>}
       </div>
     </div>
   );

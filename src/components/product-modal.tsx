@@ -14,7 +14,7 @@ import { Button } from "./ui/button";
 import { useCart } from "@/contexts/cart-provider";
 import { useToast } from "@/hooks/use-toast";
 import { Instagram, Facebook } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -42,6 +42,19 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
   const { addItem, setCartOpen } = useCart();
   const { toast } = useToast();
   const [imgIdx, setImgIdx] = useState(0);
+  const [globalSocials, setGlobalSocials] = useState<{facebook?: string, instagram?: string, snapchat?: string, whatsapp?: string}>({});
+
+  useEffect(() => {
+    fetch('/api/socials')
+      .then(async res => {
+        try {
+          const data = await res.json();
+          if (data && typeof data === 'object') setGlobalSocials(data);
+        } catch {
+          setGlobalSocials({});
+        }
+      });
+  }, []);
 
   if (!product) return null;
 
@@ -115,30 +128,30 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
             </DialogDescription>
             <DialogFooter className="mt-4 sm:justify-between items-center">
                 <div className="flex justify-start items-center gap-2 order-last sm:order-first">
-                    {product.facebook && (
+                    {(product.facebook || globalSocials.facebook) && (
                         <Button variant="ghost" size="icon" asChild>
-                            <a href={product.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                            <a href={product.facebook || globalSocials.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
                                 <Facebook className="h-5 w-5" />
                             </a>
                         </Button>
                     )}
-                    {product.instagram && (
+                    {(product.instagram || globalSocials.instagram) && (
                         <Button variant="ghost" size="icon" asChild>
-                            <a href={product.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                            <a href={product.instagram || globalSocials.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                                 <Instagram className="h-5 w-5" />
                             </a>
                         </Button>
                     )}
-                    {product.snapchat && (
+                    {(product.snapchat || globalSocials.snapchat) && (
                         <Button variant="ghost" size="icon" asChild>
-                            <a href={product.snapchat} target="_blank" rel="noopener noreferrer" aria-label="Snapchat">
+                            <a href={product.snapchat || globalSocials.snapchat} target="_blank" rel="noopener noreferrer" aria-label="Snapchat">
                                 <SnapchatIcon />
                             </a>
                         </Button>
                     )}
-                    {product.whatsapp && (
+                    {(product.whatsapp || globalSocials.whatsapp) && (
                         <Button variant="ghost" size="icon" asChild>
-                            <a href={product.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                            <a href={product.whatsapp || globalSocials.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
                                 <WhatsAppIcon />
                             </a>
                         </Button>
