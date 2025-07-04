@@ -20,13 +20,49 @@ function withDefaultSocials(product: Omit<Product, 'facebook' | 'instagram' | 's
 
 export const products: Product[] = [
   withDefaultSocials({
-    name: "1يسب",
-    description: "1312",
-    price: "11111.0",
+    name: "qw",
+    description: "fsdgs",
+    price: "12.0",
+    category: "Apparel",
+    id: "2",
+    image: "/products/fef30207-aaf0-468f-a7e7-a9d06d8d8bb8-thumbnail-1000x1000-70.jpeg",
+    images: ['/products/fef30207-aaf0-468f-a7e7-a9d06d8d8bb8-thumbnail-1000x1000-70.jpeg']
+  }),
+  withDefaultSocials({
+    name: "32hfg",
+    description: "dsdf",
+    price: "321.0",
     category: "Perfumes",
-    id: "1",
-    image: "/products/images (2).jfif",
-    images: ['/products/images (2).jfif']
+    id: "3",
+    image: "/products/images.jpg",
+    images: ['/products/images.jpg']
+  }),
+  withDefaultSocials({
+    name: "efsd",
+    description: "123",
+    price: "432.0",
+    category: "Creams",
+    id: "4",
+    image: "/products/prada-paradoxe-edp.jpeg",
+    images: ['/products/prada-paradoxe-edp.jpeg']
+  }),
+  withDefaultSocials({
+    name: "بسيب",
+    description: "ب3",
+    price: "555.0",
+    category: "Perfumes",
+    id: "5",
+    image: "/products/fef30207-aaf0-468f-a7e7-a9d06d8d8bb8-thumbnail-1000x1000-70_1.jpeg",
+    images: ['/products/fef30207-aaf0-468f-a7e7-a9d06d8d8bb8-thumbnail-1000x1000-70_1.jpeg', '/products/images_1.jpg', '/products/prada-paradoxe-edp_1.jpeg']
+  }),
+  withDefaultSocials({
+    name: "قثضصثق",
+    description: "قصضثق",
+    price: "444.0",
+    category: "Perfumes",
+    id: "6",
+    image: "/products/AQPbTusC4JTo20-IhLVIvmperio0mo4imd9bde2QVhq4i3UUuzqx5_YQ4RAuvdLm_i8pL6OFMRypflwwuvvMSJH0.mp4",
+    images: ['/products/AQPbTusC4JTo20-IhLVIvmperio0mo4imd9bde2QVhq4i3UUuzqx5_YQ4RAuvdLm_i8pL6OFMRypflwwuvvMSJH0.mp4']
   })
 ];
 

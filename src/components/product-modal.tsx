@@ -64,23 +64,25 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-4">
             <div className="relative aspect-square">
-              {product.video ? (
-                <video
-                  src={product.video}
-                  controls
-                  loop
-                  autoPlay
-                  muted
-                  className="w-full h-full object-cover rounded-md"
-                />
-              ) : safeImages.length > 0 ? (
-                <Image
-                  src={safeImages[imgIdx]}
-                  alt={product.name}
-                  fill
-                  className="object-cover rounded-md"
-                  data-ai-hint={product.dataAiHint}
-                />
+              {safeImages.length > 0 ? (
+                safeImages[imgIdx].endsWith('.mp4') ? (
+                  <video
+                    src={safeImages[imgIdx]}
+                    controls
+                    muted
+                    className="w-full h-full object-cover rounded-md"
+                    style={{ aspectRatio: "1/1" }}
+                  />
+                ) : (
+                  <Image
+                    src={safeImages[imgIdx]}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover rounded-md"
+                    data-ai-hint={product.dataAiHint}
+                  />
+                )
               ) : null}
             </div>
             {safeImages.length > 1 && (
@@ -92,7 +94,11 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                     className={`border rounded-md overflow-hidden w-14 h-14 relative ${imgIdx === idx ? 'ring-2 ring-primary' : ''}`}
                     onClick={() => setImgIdx(idx)}
                   >
-                    <Image src={img} alt={product.name + ' thumbnail'} fill className="object-cover" />
+                    {img.endsWith('.mp4') ? (
+                      <video src={img} className="object-cover w-full h-full" muted />
+                    ) : (
+                      <Image src={img} alt={product.name + ' thumbnail'} fill className="object-cover" sizes="56px" />
+                    )}
                   </button>
                 ))}
               </div>

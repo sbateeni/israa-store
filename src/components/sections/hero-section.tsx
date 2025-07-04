@@ -11,11 +11,19 @@ import { Button } from "../ui/button";
 import { useLocale } from "@/contexts/locale-provider";
 import Link from "next/link";
 import { heroSlides } from "@/lib/products";
+import { ads } from "@/lib/ads";
 import Image from "next/image";
 import Autoplay from "embla-carousel-autoplay";
 
+type Slide = { image: string; text?: string; alt?: string; dataAiHint?: string };
+
 export default function HeroSection() {
   const { t } = useLocale();
+  const slides: Slide[] =
+    ads.length > 0
+      ? ads.map(ad => ({ image: ad.image, text: ad.text } as Slide))
+      : heroSlides;
+
   return (
     <section className="relative w-full h-[60vh] md:h-[80vh] p-0">
       <Carousel
@@ -24,18 +32,24 @@ export default function HeroSection() {
         opts={{ loop: true }}
       >
         <CarouselContent className="h-full">
-          {heroSlides.map((slide, index) => (
+          {slides.map((slide, index) => (
             <CarouselItem key={index} className="h-full">
-              <div className="relative w-full h-full">
+              <div className="relative w-full h-full min-h-[300px]">
                 <Image
                   src={slide.image}
-                  alt={slide.alt}
+                  alt={slide.text || slide.alt || "slide"}
                   data-ai-hint={slide.dataAiHint}
                   fill
                   className="object-cover"
+                  sizes="100vw"
                   priority={index === 0}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                {slide.text && (
+                  <div className="absolute bottom-8 left-0 right-0 text-center text-white text-2xl md:text-4xl font-bold drop-shadow-lg px-4">
+                    {slide.text}
+                  </div>
+                )}
               </div>
             </CarouselItem>
           ))}
