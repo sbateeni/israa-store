@@ -20,8 +20,8 @@ type Slide = { image: string; text?: string; alt?: string; dataAiHint?: string }
 export default function HeroSection() {
   const { t } = useLocale();
   const slides: Slide[] =
-    ads.length > 0
-      ? ads.map(ad => ({ image: ad.image, text: ad.text } as Slide))
+    Array.isArray(ads) && ads.length > 0
+      ? ads.map((ad: any) => ({ image: ad.image, text: ad.text }))
       : heroSlides;
 
   return (

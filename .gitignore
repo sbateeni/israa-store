@@ -42,3 +42,4 @@ next-env.d.ts
 
 # socials
 src/lib/socials.ts
+.env*.local
