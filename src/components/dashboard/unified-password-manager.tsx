@@ -15,7 +15,8 @@ import {
   AlertTriangle, 
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  TestTube
 } from "lucide-react";
 
 interface PasswordStatus {
@@ -427,6 +428,61 @@ export default function UnifiedPasswordManager() {
               </Button>
             </div>
           )}
+        </div>
+
+        {/* اختبار كلمة المرور */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">اختبار كلمة المرور</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  const response = await fetch('/api/test-password', {
+                    cache: 'no-store',
+                    headers: {
+                      'Cache-Control': 'no-cache, no-store, must-revalidate',
+                      'Pragma': 'no-cache',
+                      'Expires': '0'
+                    }
+                  });
+
+                  if (response.ok) {
+                    const result = await response.json();
+                    toast({
+                      title: "نتيجة الاختبار",
+                      description: `كلمة المرور ${result.data.isEncrypted ? 'مشفرة' : 'غير مشفرة'} - الطول: ${result.data.passwordLength} حرف`,
+                    });
+                  } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'فشل اختبار كلمة المرور');
+                  }
+                } catch (error) {
+                  console.error('Error testing password:', error);
+                  toast({
+                    title: "خطأ",
+                    description: error instanceof Error ? error.message : "فشل اختبار كلمة المرور",
+                    variant: "destructive"
+                  });
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              <TestTube className="h-4 w-4 mr-2" />
+              اختبار كلمة المرور
+            </Button>
+          </div>
+          
+          <Alert className="border-blue-200 bg-blue-50">
+            <TestTube className="h-4 w-4 text-blue-600" />
+            <AlertDescription>
+              اختبار كلمة المرور يفحص حالة التشفير والتنسيق في Vercel Blob Storage
+            </AlertDescription>
+          </Alert>
         </div>
 
         {/* معلومات إضافية */}

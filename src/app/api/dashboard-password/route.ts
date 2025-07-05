@@ -12,9 +12,22 @@ function encryptPassword(password: string): string {
 // دالة فك التشفير
 function decryptPassword(encrypted: string): string {
   try {
-    return Buffer.from(encrypted, 'base64').toString('utf-8');
-  } catch {
-    return "israa2025"; // fallback
+    // التحقق من أن النص مشفر فعلاً
+    if (!encrypted || encrypted.length < 4) {
+      return encrypted; // إرجاع النص كما هو إذا لم يكن مشفراً
+    }
+    
+    const decrypted = Buffer.from(encrypted, 'base64').toString('utf-8');
+    
+    // التحقق من أن النتيجة صحيحة
+    if (!decrypted || decrypted.length === 0) {
+      return encrypted; // إرجاع النص الأصلي إذا فشل فك التشفير
+    }
+    
+    return decrypted;
+  } catch (error) {
+    console.error('Error decrypting password:', error);
+    return encrypted; // إرجاع النص الأصلي بدلاً من كلمة مرور افتراضية
   }
 }
 
