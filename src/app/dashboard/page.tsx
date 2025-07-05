@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { fetchProducts, saveProducts, uploadMedia, deleteProduct } from "@/lib/products";
+import { fetchProducts, saveProducts, uploadMedia, deleteProduct, fetchSiteSettings, saveSiteSettings } from "@/lib/products";
 import { useRouter } from "next/navigation";
 
 interface Product {
@@ -65,23 +65,35 @@ export default function DashboardPage() {
     })();
   }, []);
 
-  // تحميل إعدادات الموقع المحفوظة
+  // تحميل إعدادات الموقع من الخادم
   useEffect(() => {
-    const savedSettings = localStorage.getItem('israa_site_settings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      
-      // استخراج الرقم من رابط واتساب للعرض
-      let whatsappDisplay = settings.whatsapp || "";
-      if (whatsappDisplay.startsWith('https://wa.me/')) {
-        whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
+    const loadSettings = async () => {
+      try {
+        const settings = await fetchSiteSettings();
+        
+        // استخراج الرقم من رابط واتساب للعرض
+        let whatsappDisplay = settings.whatsapp || "";
+        if (whatsappDisplay.startsWith('https://wa.me/')) {
+          whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
+        }
+        
+        setSiteSettings({
+          ...settings,
+          whatsapp: whatsappDisplay
+        });
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        // في حالة الخطأ، استخدام الإعدادات الافتراضية
+        setSiteSettings({
+          whatsapp: "966500000000",
+          facebook: "",
+          instagram: "",
+          snapchat: "",
+        });
       }
-      
-      setSiteSettings({
-        ...settings,
-        whatsapp: whatsappDisplay
-      });
-    }
+    };
+    
+    loadSettings();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -94,22 +106,32 @@ export default function DashboardPage() {
     setSiteSettings((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveSettings = () => {
-    // تنسيق روابط التواصل الاجتماعي قبل الحفظ
-    let formattedSettings = { ...siteSettings };
-    
-    // تنسيق رابط واتساب
-    if (formattedSettings.whatsapp && !formattedSettings.whatsapp.startsWith('https://wa.me/')) {
-      // إذا كان المستخدم كتب رقم فقط، أضف الرابط الكامل
-      if (formattedSettings.whatsapp.match(/^\d+$/)) {
-        formattedSettings.whatsapp = `https://wa.me/${formattedSettings.whatsapp}`;
+  const handleSaveSettings = async () => {
+    try {
+      // تنسيق روابط التواصل الاجتماعي قبل الحفظ
+      let formattedSettings = { ...siteSettings };
+      
+      // تنسيق رابط واتساب
+      if (formattedSettings.whatsapp && !formattedSettings.whatsapp.startsWith('https://wa.me/')) {
+        // إذا كان المستخدم كتب رقم فقط، أضف الرابط الكامل
+        if (formattedSettings.whatsapp.match(/^\d+$/)) {
+          formattedSettings.whatsapp = `https://wa.me/${formattedSettings.whatsapp}`;
+        }
       }
+      
+      // حفظ الإعدادات على الخادم
+      await saveSiteSettings(formattedSettings);
+      
+      // تحديث الحالة المحلية
+      setSiteSettings(formattedSettings);
+      
+      setMessage({ type: 'success', text: 'تم حفظ إعدادات الموقع بنجاح' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setMessage({ type: 'error', text: 'فشل حفظ إعدادات الموقع' });
+      setTimeout(() => setMessage(null), 3000);
     }
-    
-    localStorage.setItem('israa_site_settings', JSON.stringify(formattedSettings));
-    setSiteSettings(formattedSettings); // تحديث الحالة المحلية
-    setMessage({ type: 'success', text: 'تم حفظ إعدادات الموقع بنجاح' });
-    setTimeout(() => setMessage(null), 3000);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
