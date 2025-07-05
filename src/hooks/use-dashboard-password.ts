@@ -14,23 +14,27 @@ export function useDashboardPassword() {
   // جلب كلمة المرور من Vercel Blob Storage
   const fetchPassword = async () => {
     try {
+      console.log('=== Fetching password from API ===');
       setLoading(true);
       setError(null);
       
       const response = await fetch('/api/dashboard-password', {
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
+      
+      console.log('API response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data: PasswordData = await response.json();
-      console.log('Password loaded:', data);
+      console.log('Password loaded from API:', { password: data.password ? '***' : 'undefined', message: data.message });
       
       setPassword(data.password);
       setMessage(data.message);
@@ -48,6 +52,7 @@ export function useDashboardPassword() {
   // تحديث كلمة المرور في Vercel Blob Storage
   const updatePassword = async (newPassword: string): Promise<boolean> => {
     try {
+      console.log('=== Updating password ===');
       setLoading(true);
       setError(null);
       
@@ -55,10 +60,14 @@ export function useDashboardPassword() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         },
         body: JSON.stringify({ password: newPassword }),
       });
+      
+      console.log('Update API response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -69,8 +78,12 @@ export function useDashboardPassword() {
       console.log('Password update result:', result);
       
       if (result.success) {
+        console.log('Password updated successfully, refreshing...');
         setPassword(newPassword);
         setMessage('تم تحديث كلمة المرور بنجاح');
+        
+        // إعادة تحميل كلمة المرور للتأكد من التحديث
+        await fetchPassword();
         return true;
       } else {
         throw new Error(result.error || 'فشل تحديث كلمة المرور');
@@ -86,6 +99,7 @@ export function useDashboardPassword() {
 
   // جلب كلمة المرور عند تحميل المكون
   useEffect(() => {
+    console.log('=== useDashboardPassword hook initialized ===');
     fetchPassword();
   }, []);
 

@@ -30,8 +30,13 @@ export default function PasswordForm() {
   };
 
   const handleSavePassword = async () => {
+    console.log('=== handleSavePassword called ===');
+    console.log('Current password from hook:', currentPassword);
+    console.log('Entered current password:', passwordForm.currentPassword);
+    
     // التحقق من كلمة المرور الحالية
     if (passwordForm.currentPassword !== currentPassword) {
+      console.log('Current password mismatch');
       toast({
         title: "خطأ",
         description: "كلمة المرور الحالية غير صحيحة",
@@ -69,9 +74,11 @@ export default function PasswordForm() {
 
     setSavingPassword(true);
     try {
+      console.log('Calling updatePassword with new password');
       const success = await updatePassword(passwordForm.newPassword);
       
       if (success) {
+        console.log('Password update successful');
         toast({
           title: "تم الحفظ بنجاح",
           description: "تم تغيير كلمة المرور بنجاح في Vercel Blob Storage",
@@ -84,11 +91,18 @@ export default function PasswordForm() {
         });
         
         // إعادة تحميل كلمة المرور الجديدة
+        console.log('Refreshing password after update');
         await refreshPassword();
+        
+        // إضافة تأخير قصير للتأكد من التحديث
+        setTimeout(() => {
+          console.log('Final password check after update:', currentPassword);
+        }, 1000);
       } else {
         throw new Error('فشل تغيير كلمة المرور');
       }
     } catch (error) {
+      console.error('Error in handleSavePassword:', error);
       toast({
         title: "خطأ",
         description: "فشل تغيير كلمة المرور",
@@ -156,6 +170,15 @@ export default function PasswordForm() {
             <span className="text-xs text-gray-500">
               محفوظة في Vercel Blob Storage - آمنة ومخفية عن GitHub
             </span>
+            <br />
+            <Button 
+              onClick={refreshPassword} 
+              className="mt-2"
+              variant="outline"
+              size="sm"
+            >
+              إعادة تحميل كلمة المرور
+            </Button>
           </AlertDescription>
         </Alert>
 

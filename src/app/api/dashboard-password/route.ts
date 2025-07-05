@@ -5,6 +5,7 @@ const PASSWORD_BLOB_KEY = "dashboard-password.json";
 
 export async function GET() {
   try {
+    console.log('=== GET /api/dashboard-password ===');
     console.log('Fetching dashboard password from Vercel Blob Storage...');
     
     const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -13,6 +14,12 @@ export async function GET() {
       return NextResponse.json({
         password: "israa2025", // كلمة المرور الافتراضية
         message: "Using default password - BLOB_READ_WRITE_TOKEN not configured"
+      }, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
     }
     
@@ -26,15 +33,27 @@ export async function GET() {
     if (passwordBlob) {
       try {
         console.log('Found password blob, fetching content...');
-        const response = await fetch(passwordBlob.url);
+        const response = await fetch(passwordBlob.url, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
         if (response.ok) {
           const text = await response.text();
+          console.log('Raw password blob content:', text);
           if (text) {
             const passwordData = JSON.parse(text);
-            console.log('Password data loaded from blob');
+            console.log('Password data loaded from blob:', passwordData);
             return NextResponse.json({
               password: passwordData.password,
               message: "Password loaded from Vercel Blob Storage"
+            }, {
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
             });
           }
         }
@@ -57,12 +76,24 @@ export async function GET() {
         return NextResponse.json({
           password: defaultPassword.password,
           message: "Default password created in Vercel Blob Storage"
+        }, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
         });
       } catch (error) {
         console.error('Error creating default password:', error);
         return NextResponse.json({
           password: "israa2025",
           message: "Using fallback password"
+        }, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
         });
       }
     }
@@ -70,6 +101,12 @@ export async function GET() {
     return NextResponse.json({
       password: "israa2025",
       message: "Using fallback password"
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
     
   } catch (error) {
@@ -77,14 +114,21 @@ export async function GET() {
     return NextResponse.json({
       password: "israa2025",
       message: "Error occurred, using fallback password"
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('=== POST /api/dashboard-password ===');
     const body = await req.json();
-    console.log('Received password update request');
+    console.log('Received password update request:', { newPassword: body.password ? '***' : 'undefined' });
     
     const token = process.env.BLOB_READ_WRITE_TOKEN;
     if (!token) {
@@ -95,6 +139,7 @@ export async function POST(req: NextRequest) {
     }
     
     if (!body.password) {
+      console.error('Password is required');
       return NextResponse.json({ 
         error: 'Password is required' 
       }, { status: 400 });
@@ -113,10 +158,28 @@ export async function POST(req: NextRequest) {
     
     console.log('Password saved successfully:', result.url);
     
+    // التحقق من أن كلمة المرور تم حفظها بشكل صحيح
+    try {
+      const verifyResponse = await fetch(result.url, { cache: 'no-store' });
+      if (verifyResponse.ok) {
+        const verifyText = await verifyResponse.text();
+        const verifyData = JSON.parse(verifyText);
+        console.log('Verification - saved password matches:', verifyData.password === body.password);
+      }
+    } catch (verifyError) {
+      console.error('Error verifying saved password:', verifyError);
+    }
+    
     return NextResponse.json({ 
       success: true, 
       message: 'Password updated successfully in Vercel Blob Storage',
       url: result.url
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
     
   } catch (error: any) {
