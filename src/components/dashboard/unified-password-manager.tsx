@@ -263,7 +263,7 @@ export default function UnifiedPasswordManager() {
         {/* حالة كلمة المرور */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">حالة كلمة المرور</h3>
+            <h3 className="text-lg font-semibold text-gray-800">حالة كلمة المرور</h3>
             <Button
               variant="outline"
               size="sm"
@@ -279,14 +279,14 @@ export default function UnifiedPasswordManager() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Alert className={passwordStatus.isEncrypted ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
                 <Shield className={`h-4 w-4 ${passwordStatus.isEncrypted ? 'text-green-600' : 'text-red-600'}`} />
-                <AlertDescription>
+                <AlertDescription className="text-gray-800 font-medium">
                   {passwordStatus.isEncrypted ? "كلمة المرور مشفرة" : "كلمة المرور غير مشفرة"}
                 </AlertDescription>
               </Alert>
 
               <Alert className={passwordStatus.isFormatted ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
                 <CheckCircle className={`h-4 w-4 ${passwordStatus.isFormatted ? 'text-green-600' : 'text-red-600'}`} />
-                <AlertDescription>
+                <AlertDescription className="text-gray-800 font-medium">
                   {passwordStatus.isFormatted ? "التنسيق صحيح" : "التنسيق يحتاج إصلاح"}
                 </AlertDescription>
               </Alert>
@@ -297,12 +297,12 @@ export default function UnifiedPasswordManager() {
         {/* إجراءات الأمان */}
         {passwordStatus && (passwordStatus.needsEncryption || passwordStatus.needsFormatFix) && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">إجراءات الأمان المطلوبة</h3>
+            <h3 className="text-lg font-semibold text-gray-800">إجراءات الأمان المطلوبة</h3>
             
             {passwordStatus.needsEncryption && (
               <Alert className="border-orange-200 bg-orange-50">
                 <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <AlertDescription>
+                <AlertDescription className="text-gray-800 font-medium">
                   كلمة المرور الحالية غير مشفرة في Blob Storage
                 </AlertDescription>
                 <Button
@@ -320,7 +320,7 @@ export default function UnifiedPasswordManager() {
             {passwordStatus.needsFormatFix && (
               <Alert className="border-orange-200 bg-orange-50">
                 <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <AlertDescription>
+                <AlertDescription className="text-gray-800 font-medium">
                   ملف كلمة المرور يحتوي على تنسيق خاطئ
                 </AlertDescription>
                 <Button
@@ -340,7 +340,7 @@ export default function UnifiedPasswordManager() {
         {/* تغيير كلمة المرور */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">تغيير كلمة المرور</h3>
+            <h3 className="text-lg font-semibold text-gray-800">تغيير كلمة المرور</h3>
             <Button
               variant="outline"
               size="sm"
@@ -353,7 +353,7 @@ export default function UnifiedPasswordManager() {
           {changePasswordMode && (
             <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
               <div className="space-y-2">
-                <Label htmlFor="current-password">كلمة المرور الحالية</Label>
+                <Label htmlFor="current-password" className="text-gray-800 font-medium">كلمة المرور الحالية</Label>
                 <div className="relative">
                   <Input
                     id="current-password"
@@ -361,6 +361,7 @@ export default function UnifiedPasswordManager() {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="أدخل كلمة المرور الحالية"
+                    className="bg-white border-gray-300 text-gray-800"
                   />
                   <Button
                     type="button"
@@ -375,7 +376,7 @@ export default function UnifiedPasswordManager() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="new-password">كلمة المرور الجديدة</Label>
+                <Label htmlFor="new-password" className="text-gray-800 font-medium">كلمة المرور الجديدة</Label>
                 <div className="relative">
                   <Input
                     id="new-password"
@@ -383,6 +384,7 @@ export default function UnifiedPasswordManager() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)"
+                    className="bg-white border-gray-300 text-gray-800"
                   />
                   <Button
                     type="button"
@@ -397,7 +399,7 @@ export default function UnifiedPasswordManager() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">تأكيد كلمة المرور الجديدة</Label>
+                <Label htmlFor="confirm-password" className="text-gray-800 font-medium">تأكيد كلمة المرور الجديدة</Label>
                 <div className="relative">
                   <Input
                     id="confirm-password"
@@ -405,6 +407,7 @@ export default function UnifiedPasswordManager() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="أعد إدخال كلمة المرور الجديدة"
+                    className="bg-white border-gray-300 text-gray-800"
                   />
                   <Button
                     type="button"
@@ -433,7 +436,7 @@ export default function UnifiedPasswordManager() {
         {/* اختبار كلمة المرور */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">اختبار كلمة المرور</h3>
+            <h3 className="text-lg font-semibold text-gray-800">اختبار كلمة المرور</h3>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -541,10 +544,10 @@ export default function UnifiedPasswordManager() {
           
           <Alert className="border-blue-200 bg-blue-50">
             <TestTube className="h-4 w-4 text-blue-600" />
-            <AlertDescription>
-              <strong>اختبار سريع:</strong> فحص سريع لحالة التشفير
+            <AlertDescription className="text-gray-800">
+              <strong className="text-blue-800">اختبار سريع:</strong> فحص سريع لحالة التشفير
               <br />
-              <strong>تشخيص تفصيلي:</strong> فحص شامل مع مقارنة كلمة المرور
+              <strong className="text-blue-800">تشخيص تفصيلي:</strong> فحص شامل مع مقارنة كلمة المرور
             </AlertDescription>
           </Alert>
         </div>
@@ -552,8 +555,8 @@ export default function UnifiedPasswordManager() {
         {/* معلومات إضافية */}
         <Alert className="border-blue-200 bg-blue-50">
           <Shield className="h-4 w-4 text-blue-600" />
-          <AlertDescription>
-            <strong>معلومات الأمان:</strong> كلمة المرور محفوظة في Vercel Blob Storage ومشفرة بـ Base64. 
+          <AlertDescription className="text-gray-800">
+            <strong className="text-blue-800">معلومات الأمان:</strong> كلمة المرور محفوظة في Vercel Blob Storage ومشفرة بـ Base64. 
             لا توجد كلمات مرور مكشوفة في الكود المصدري.
           </AlertDescription>
         </Alert>
