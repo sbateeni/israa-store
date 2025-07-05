@@ -9,7 +9,9 @@ interface Product {
   description: string;
   price: number;
   image?: string;
+  images?: string[];
   video?: string;
+  videos?: string[];
   whatsapp?: string;
   facebook?: string;
   instagram?: string;
@@ -24,8 +26,17 @@ export default function DashboardPage() {
     name: "",
     description: "",
     price: "",
-    image: undefined as File | undefined,
-    video: undefined as File | undefined,
+    images: [] as File[],
+    videos: [] as File[],
+    mainImageIndex: 0,
+    whatsapp: "",
+    facebook: "",
+    instagram: "",
+    snapchat: "",
+  });
+  
+  // إعدادات الموقع العامة
+  const [siteSettings, setSiteSettings] = useState({
     whatsapp: "",
     facebook: "",
     instagram: "",
@@ -54,32 +65,86 @@ export default function DashboardPage() {
     })();
   }, []);
 
+  // تحميل إعدادات الموقع المحفوظة
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('israa_site_settings');
+    if (savedSettings) {
+      setSiteSettings(JSON.parse(savedSettings));
+    }
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setSiteSettings((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveSettings = () => {
+    localStorage.setItem('israa_site_settings', JSON.stringify(siteSettings));
+    setMessage({ type: 'success', text: 'تم حفظ إعدادات الموقع بنجاح' });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
-    if (files && files[0]) {
-      setForm((prev) => ({ ...prev, [name]: files[0] }));
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files);
+      setForm((prev) => ({ ...prev, [name]: fileArray }));
     }
+  };
+
+  const removeImage = (index: number) => {
+    setForm(prev => {
+      const newImages = prev.images.filter((_, i) => i !== index);
+      const newMainIndex = prev.mainImageIndex >= newImages.length ? 0 : prev.mainImageIndex;
+      return {
+        ...prev,
+        images: newImages,
+        mainImageIndex: newMainIndex
+      };
+    });
+  };
+
+  const removeVideo = (index: number) => {
+    setForm(prev => ({
+      ...prev,
+      videos: prev.videos.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let imageUrl = editingProduct?.image;
-      let videoUrl = editingProduct?.video;
-      if (form.image) {
-        imageUrl = await uploadMedia(form.image);
-      }
-      if (form.video) {
-        videoUrl = await uploadMedia(form.video);
+      let imageUrls: string[] = [];
+      let videoUrls: string[] = [];
+      
+      // رفع الصور
+      if (form.images.length > 0) {
+        for (const image of form.images) {
+          const url = await uploadMedia(image);
+          imageUrls.push(url);
+        }
       }
       
+      // رفع الفيديوهات
+      if (form.videos.length > 0) {
+        for (const video of form.videos) {
+          const url = await uploadMedia(video);
+          videoUrls.push(url);
+        }
+      }
+      
+      // تنسيق روابط التواصل الاجتماعي
+      let whatsappUrl = form.whatsapp || siteSettings.whatsapp;
+      let facebookUrl = form.facebook || siteSettings.facebook;
+      let instagramUrl = form.instagram || siteSettings.instagram;
+      let snapchatUrl = form.snapchat || siteSettings.snapchat;
+
       // تنسيق رابط واتساب
-      let whatsappUrl = form.whatsapp;
       if (whatsappUrl && !whatsappUrl.startsWith('https://wa.me/')) {
         // إذا كان المستخدم كتب رقم فقط، أضف الرابط الكامل
         if (whatsappUrl.match(/^\d+$/)) {
@@ -92,12 +157,14 @@ export default function DashboardPage() {
         name: form.name,
         description: form.description,
         price: parseFloat(form.price),
-        image: imageUrl,
-        video: videoUrl,
+        image: imageUrls[form.mainImageIndex] || imageUrls[0] || undefined,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
+        video: videoUrls[0] || undefined,
+        videos: videoUrls.length > 0 ? videoUrls : undefined,
         whatsapp: whatsappUrl || undefined,
-        facebook: form.facebook || undefined,
-        instagram: form.instagram || undefined,
-        snapchat: form.snapchat || undefined,
+        facebook: facebookUrl || undefined,
+        instagram: instagramUrl || undefined,
+        snapchat: snapchatUrl || undefined,
       };
       let newProducts;
       if (editingProduct) {
@@ -112,8 +179,9 @@ export default function DashboardPage() {
         name: "", 
         description: "", 
         price: "", 
-        image: undefined, 
-        video: undefined,
+        images: [],
+        videos: [],
+        mainImageIndex: 0,
         whatsapp: "",
         facebook: "",
         instagram: "",
@@ -141,8 +209,9 @@ export default function DashboardPage() {
       name: product.name,
       description: product.description,
       price: product.price.toString(),
-      image: undefined,
-      video: undefined,
+      images: [],
+      videos: [],
+      mainImageIndex: 0,
       whatsapp: whatsappDisplay,
       facebook: product.facebook || "",
       instagram: product.instagram || "",
@@ -172,15 +241,77 @@ export default function DashboardPage() {
         </div>
       )}
       <h1 className="text-2xl font-bold mb-4">لوحة تحكم المنتجات</h1>
-      <button
-        className="mb-4 text-sm text-blue-600 underline"
-        onClick={() => {
-          localStorage.removeItem("israa_dashboard_auth");
-          router.push("/login");
-        }}
-      >
-        تسجيل الخروج
-      </button>
+      <div className="flex justify-between items-center mb-4">
+        <button
+          className="text-sm text-blue-600 underline"
+          onClick={() => {
+            localStorage.removeItem("israa_dashboard_auth");
+            router.push("/login");
+          }}
+        >
+          تسجيل الخروج
+        </button>
+      </div>
+      
+      {/* إعدادات الموقع العامة */}
+      <div className="border p-4 rounded mb-6 bg-gray-50">
+        <h2 className="text-lg font-semibold mb-3 text-gray-800">إعدادات الموقع العامة</h2>
+        <p className="text-sm text-gray-600 mb-4">هذه الروابط ستُستخدم تلقائياً في جميع المنتجات الجديدة</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block mb-1 text-green-600 font-medium">رابط واتساب الافتراضي</label>
+            <input
+              name="whatsapp"
+              type="url"
+              value={siteSettings.whatsapp}
+              onChange={handleSettingsChange}
+              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="https://wa.me/966500000000"
+            />
+            <p className="text-xs text-gray-500 mt-1">اكتب الرقم فقط بدون + (مثال: 966500000000)</p>
+          </div>
+          <div>
+            <label className="block mb-1 text-blue-600 font-medium">رابط فيسبوك الافتراضي</label>
+            <input
+              name="facebook"
+              type="url"
+              value={siteSettings.facebook}
+              onChange={handleSettingsChange}
+              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="https://facebook.com/username"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-purple-600 font-medium">رابط انستغرام الافتراضي</label>
+            <input
+              name="instagram"
+              type="url"
+              value={siteSettings.instagram}
+              onChange={handleSettingsChange}
+              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="https://instagram.com/username"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-yellow-600 font-medium">رابط سناب شات الافتراضي</label>
+            <input
+              name="snapchat"
+              type="url"
+              value={siteSettings.snapchat}
+              onChange={handleSettingsChange}
+              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="https://snapchat.com/add/username"
+            />
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleSaveSettings}
+          className="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md"
+        >
+          حفظ الإعدادات
+        </button>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4 border p-4 rounded mb-8">
         <div>
           <label className="block mb-1">اسم المنتج</label>
@@ -214,29 +345,91 @@ export default function DashboardPage() {
           />
         </div>
         <div>
-          <label className="block mb-1">صورة المنتج</label>
+          <label className="block mb-1">صور المنتج (يمكن اختيار عدة صور)</label>
+          <p className="text-sm text-gray-600 mb-2">انقر على الصورة لاختيارها كصورة رئيسية، أو اضغط × لحذفها</p>
           <input
-            name="image"
+            name="images"
             type="file"
             accept="image/*"
+            multiple
             onChange={handleFileChange}
             ref={imageInputRef}
+            className="border rounded w-full p-2 bg-white text-gray-900"
           />
+          {form.images.length > 0 && (
+            <div className="mt-3">
+              <label className="block mb-2 text-sm font-medium">اختر الصورة الرئيسية:</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {form.images.map((image, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={URL.createObjectURL(image)}
+                      alt={`صورة ${index + 1}`}
+                      className={`w-full h-24 object-cover rounded border-2 cursor-pointer transition-all ${
+                        form.mainImageIndex === index ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300'
+                      }`}
+                      onClick={() => setForm(prev => ({ ...prev, mainImageIndex: index }))}
+                    />
+                    {form.mainImageIndex === index && (
+                      <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
+                        رئيسية
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 left-1 bg-red-500 text-white text-xs px-1 py-0.5 rounded hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div>
-          <label className="block mb-1">فيديو المنتج</label>
+          <label className="block mb-1">فيديوهات المنتج (يمكن اختيار عدة فيديوهات)</label>
+          <p className="text-sm text-gray-600 mb-2">اضغط "حذف" لإزالة أي فيديو من القائمة</p>
           <input
-            name="video"
+            name="videos"
             type="file"
             accept="video/*"
+            multiple
             onChange={handleFileChange}
             ref={videoInputRef}
+            className="border rounded w-full p-2 bg-white text-gray-900"
           />
+          {form.videos.length > 0 && (
+            <div className="mt-3">
+              <label className="block mb-2 text-sm font-medium">الفيديوهات المختارة:</label>
+              <div className="space-y-2">
+                {form.videos.map((video, index) => (
+                  <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                    <video
+                      src={URL.createObjectURL(video)}
+                      className="w-16 h-12 object-cover rounded"
+                      muted
+                    />
+                    <span className="text-sm text-gray-700 flex-1">{video.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeVideo(index)}
+                      className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600"
+                    >
+                      حذف
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Social Media Links */}
         <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-3">روابط التواصل الاجتماعي</h3>
+          <h3 className="text-lg font-semibold mb-3">روابط التواصل الاجتماعي (اختياري)</h3>
+          <p className="text-sm text-gray-600 mb-4">اتركها فارغة لاستخدام الإعدادات العامة، أو اكتب روابط خاصة لهذا المنتج</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block mb-1 text-green-600">رابط واتساب</label>
@@ -299,8 +492,9 @@ export default function DashboardPage() {
                 name: "", 
                 description: "", 
                 price: "", 
-                image: undefined, 
-                video: undefined,
+                images: [],
+                videos: [],
+                mainImageIndex: 0,
                 whatsapp: "",
                 facebook: "",
                 instagram: "",
