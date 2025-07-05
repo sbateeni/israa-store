@@ -16,7 +16,6 @@ export async function GET() {
         facebook: "",
         instagram: "",
         snapchat: "",
-        dashboardPassword: "",
       });
     }
     
@@ -25,7 +24,6 @@ export async function GET() {
     console.log('Available blobs:', blobs.map(b => b.pathname));
     
     let social = { whatsapp: "", facebook: "", instagram: "", snapchat: "" };
-    let password = { dashboardPassword: "" };
 
     // البحث عن ملف social-links.json
     const socialBlob = blobs.find(blob => blob.pathname === SOCIAL_BLOB_KEY);
@@ -48,29 +46,8 @@ export async function GET() {
       console.log('Social blob not found, using defaults');
     }
 
-    // البحث عن ملف dashboard-password.json
-    const passwordBlob = blobs.find(blob => blob.pathname === PASSWORD_BLOB_KEY);
-    if (passwordBlob) {
-      try {
-        console.log('Found password blob, fetching content...');
-        const response = await fetch(passwordBlob.url);
-        if (response.ok) {
-          const text = await response.text();
-          if (text) {
-            const passwordData = JSON.parse(text);
-            console.log('Password data loaded:', passwordData);
-            password = passwordData;
-          }
-        }
-      } catch (error) {
-        console.error('Error reading password blob:', error);
-      }
-    } else {
-      console.log('Password blob not found, using defaults');
-    }
-
-    const combinedSettings = { ...social, ...password };
-    console.log('Combined settings to return:', combinedSettings);
+    const combinedSettings = { ...social };
+    console.log('Combined settings to return (without password):', combinedSettings);
     return NextResponse.json(combinedSettings);
   } catch (error) {
     console.error("Error fetching settings:", error);
@@ -79,7 +56,6 @@ export async function GET() {
       facebook: "",
       instagram: "",
       snapchat: "",
-      dashboardPassword: "",
     });
   }
 }
@@ -101,7 +77,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No data received' }, { status: 400 });
     }
 
-    // تجهيز بيانات التواصل الاجتماعي
+    // تجهيز بيانات التواصل الاجتماعي فقط
     const social = {
       whatsapp: body.whatsapp || "",
       facebook: body.facebook || "",
@@ -109,30 +85,24 @@ export async function POST(req: NextRequest) {
       snapchat: body.snapchat || ""
     };
 
-    // تجهيز بيانات كلمة المرور
-    const password = { 
-      dashboardPassword: body.dashboardPassword || "" 
-    };
+    // إزالة تجهيز بيانات كلمة المرور لحماية الأمان
 
     console.log('Prepared social data:', social);
-    console.log('Prepared password data:', password);
     
     // التحقق من صحة البيانات
-    if (typeof social !== 'object' || typeof password !== 'object') {
-      console.error('Invalid data structure:', { social, password });
+    if (typeof social !== 'object') {
+      console.error('Invalid data structure:', { social });
       return NextResponse.json({ error: 'Invalid data structure' }, { status: 400 });
     }
     
     console.log('Saving to Vercel Blob Storage...');
     
-    // إنشاء Blobs من البيانات
+    // إنشاء Blob من بيانات التواصل الاجتماعي فقط
     const socialBlob = new Blob([JSON.stringify(social, null, 2)], { type: "application/json" });
-    const passBlob = new Blob([JSON.stringify(password, null, 2)], { type: "application/json" });
     
     console.log('Social blob size:', socialBlob.size, 'bytes');
-    console.log('Password blob size:', passBlob.size, 'bytes');
     
-    // حفظ الإعدادات في Vercel Blob Storage
+    // حفظ إعدادات التواصل الاجتماعي فقط في Vercel Blob Storage
     console.log('Saving social links...');
     const socialResult = await put(SOCIAL_BLOB_KEY, socialBlob, { 
       access: 'public', 
@@ -141,21 +111,14 @@ export async function POST(req: NextRequest) {
     });
     console.log('Social links saved:', socialResult.url);
 
-    console.log('Saving password...');
-    const passResult = await put(PASSWORD_BLOB_KEY, passBlob, { 
-      access: 'public', 
-      token,
-      allowOverwrite: true 
-    });
-    console.log('Password saved:', passResult.url);
+    // إزالة حفظ كلمة المرور لحماية الأمان
     
-    console.log('All settings saved successfully to Vercel Blob Storage');
+    console.log('Social settings saved successfully to Vercel Blob Storage');
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Settings saved successfully to Vercel Blob Storage',
-      socialUrl: socialResult.url,
-      passwordUrl: passResult.url
+      message: 'Social settings saved successfully to Vercel Blob Storage',
+      socialUrl: socialResult.url
     });
   } catch (error: any) {
     console.error('Error saving settings:', error);

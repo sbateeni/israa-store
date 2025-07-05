@@ -3,9 +3,35 @@ import { put, list } from '@vercel/blob';
 
 const PASSWORD_BLOB_KEY = "dashboard-password.json";
 
-export async function GET() {
+// دالة للتحقق من أن الطلب يأتي من نفس الموقع
+function isSameOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get('origin');
+  const referer = req.headers.get('referer');
+  
+  // التحقق من أن الطلب يأتي من نفس الموقع
+  if (origin && !origin.includes('israa-store.vercel.app')) {
+    return false;
+  }
+  
+  if (referer && !referer.includes('israa-store.vercel.app')) {
+    return false;
+  }
+  
+  return true;
+}
+
+export async function GET(req: NextRequest) {
   try {
     console.log('=== GET /api/dashboard-password ===');
+    
+    // حماية إضافية - التحقق من مصدر الطلب
+    if (!isSameOrigin(req)) {
+      console.error('Unauthorized access attempt from external origin');
+      return NextResponse.json({
+        error: 'Unauthorized access'
+      }, { status: 403 });
+    }
+    
     console.log('Fetching dashboard password from Vercel Blob Storage...');
     
     const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -150,6 +176,15 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     console.log('=== POST /api/dashboard-password ===');
+    
+    // حماية إضافية - التحقق من مصدر الطلب
+    if (!isSameOrigin(req)) {
+      console.error('Unauthorized access attempt from external origin');
+      return NextResponse.json({
+        error: 'Unauthorized access'
+      }, { status: 403 });
+    }
+    
     const body = await req.json();
     console.log('Received password update request:', { newPassword: body.password ? '***' : 'undefined' });
     

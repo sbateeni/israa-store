@@ -104,18 +104,18 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="products" className="space-y-6">
-          <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">إدارة المنتجات</h2>
-            <Button 
+                        <Button
               onClick={handleLogout}
-              variant="outline"
-              size="sm"
+                          variant="outline"
+                          size="sm"
               className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
             >
               <LogOut className="h-3 w-3" />
               تسجيل الخروج
-            </Button>
-          </div>
+                        </Button>
+                      </div>
           <ProductForm onProductAdded={handleProductAdded} />
           <ProductList refreshTrigger={refreshTrigger} />
         </TabsContent>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
         <TabsContent value="social" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">روابط التواصل</h2>
-            <Button 
+              <Button 
               onClick={handleLogout}
               variant="outline"
               size="sm"
@@ -131,7 +131,7 @@ export default function DashboardPage() {
             >
               <LogOut className="h-3 w-3" />
               تسجيل الخروج
-            </Button>
+              </Button>
           </div>
           <SocialLinksForm />
         </TabsContent>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
         <TabsContent value="password" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">كلمة المرور</h2>
-                        <Button 
+                <Button 
               onClick={handleLogout}
               variant="outline"
               size="sm"
@@ -147,8 +147,8 @@ export default function DashboardPage() {
             >
               <LogOut className="h-3 w-3" />
               تسجيل الخروج
-            </Button>
-          </div>
+                </Button>
+              </div>
           <PasswordFix />
           <PasswordForm />
         </TabsContent>
