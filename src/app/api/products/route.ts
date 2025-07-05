@@ -20,10 +20,31 @@ export async function GET(req: NextRequest) {
     
     // جلب محتوى الملف
     const response = await fetch(productsBlob.url);
+    if (!response.ok) {
+      console.log('API Products: Failed to fetch blob content, status:', response.status);
+      return NextResponse.json([]);
+    }
+    
     const text = await response.text();
+    if (!text) {
+      console.log('API Products: Empty blob content');
+      return NextResponse.json([]);
+    }
+    
     const data = JSON.parse(text);
     console.log('API Products: Data received:', data);
-    return NextResponse.json(data || []);
+    
+    // التحقق من صحة البيانات
+    if (!Array.isArray(data)) {
+      console.log('API Products: Data is not an array, returning empty array');
+      return NextResponse.json([]);
+    }
+    
+    // تنظيف البيانات للتأكد من عدم وجود قيم null
+    const cleanedData = data.filter(product => product && typeof product === 'object');
+    console.log('API Products: Cleaned data length:', cleanedData.length);
+    
+    return NextResponse.json(cleanedData);
     
   } catch (error: any) {
     console.log('API Products: Error fetching file:', error.message);

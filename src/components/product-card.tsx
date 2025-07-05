@@ -18,7 +18,22 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
   const { toast } = useToast();
   const { formatSocialLink } = useSettings();
 
+  // التحقق من صحة المنتج
+  if (!product || typeof product !== 'object') {
+    console.error('Invalid product:', product);
+    return null;
+  }
+
   const handleAddToCart = () => {
+    if (!product || !product.name) {
+      toast({
+        title: "خطأ",
+        description: "لا يمكن إضافة منتج غير صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     addItem(product);
     toast({
       title: "تم الإضافة",
@@ -28,6 +43,15 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
 
   const handleSocialClick = (e: React.MouseEvent, url: string, platform: string) => {
     e.stopPropagation();
+    
+    if (!product) {
+      toast({
+        title: "خطأ",
+        description: "منتج غير صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // استخدام الإعدادات المحفوظة بدلاً من روابط المنتج
     const settingsLink = formatSocialLink(platform as 'whatsapp' | 'facebook' | 'instagram' | 'snapchat');
@@ -66,9 +90,9 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow">
-        <p className="text-sm text-muted-foreground">{product.category}</p>
-        <CardTitle className="text-lg font-headline mt-1">{product.name}</CardTitle>
-        <p className="text-lg font-semibold mt-2 text-primary">{product.price} ₪</p>
+        <p className="text-sm text-muted-foreground">{product.category || 'غير محدد'}</p>
+        <CardTitle className="text-lg font-headline mt-1">{product.name || 'منتج غير محدد'}</CardTitle>
+        <p className="text-lg font-semibold mt-2 text-primary">{product.price || 'غير محدد'} ₪</p>
         
                 {/* Social Media Icons */}
         <div className="text-center mt-4">

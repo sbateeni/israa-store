@@ -26,10 +26,31 @@ export default function ProductsSection() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const prods = await fetchProducts();
-      console.log('products:', prods);
-      setProducts(prods);
-      setLoading(false);
+      try {
+        const prods = await fetchProducts();
+        console.log('products:', prods);
+        
+        // التحقق من صحة البيانات
+        if (Array.isArray(prods)) {
+          // تنظيف البيانات للتأكد من عدم وجود قيم null
+          const validProducts = prods.filter(product => 
+            product && 
+            typeof product === 'object' && 
+            product.name && 
+            product.price
+          );
+          console.log('valid products:', validProducts);
+          setProducts(validProducts);
+        } else {
+          console.log('Invalid products data:', prods);
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
