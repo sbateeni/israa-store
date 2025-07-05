@@ -69,7 +69,18 @@ export default function DashboardPage() {
   useEffect(() => {
     const savedSettings = localStorage.getItem('israa_site_settings');
     if (savedSettings) {
-      setSiteSettings(JSON.parse(savedSettings));
+      const settings = JSON.parse(savedSettings);
+      
+      // استخراج الرقم من رابط واتساب للعرض
+      let whatsappDisplay = settings.whatsapp || "";
+      if (whatsappDisplay.startsWith('https://wa.me/')) {
+        whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
+      }
+      
+      setSiteSettings({
+        ...settings,
+        whatsapp: whatsappDisplay
+      });
     }
   }, []);
 
@@ -84,7 +95,19 @@ export default function DashboardPage() {
   };
 
   const handleSaveSettings = () => {
-    localStorage.setItem('israa_site_settings', JSON.stringify(siteSettings));
+    // تنسيق روابط التواصل الاجتماعي قبل الحفظ
+    let formattedSettings = { ...siteSettings };
+    
+    // تنسيق رابط واتساب
+    if (formattedSettings.whatsapp && !formattedSettings.whatsapp.startsWith('https://wa.me/')) {
+      // إذا كان المستخدم كتب رقم فقط، أضف الرابط الكامل
+      if (formattedSettings.whatsapp.match(/^\d+$/)) {
+        formattedSettings.whatsapp = `https://wa.me/${formattedSettings.whatsapp}`;
+      }
+    }
+    
+    localStorage.setItem('israa_site_settings', JSON.stringify(formattedSettings));
+    setSiteSettings(formattedSettings); // تحديث الحالة المحلية
     setMessage({ type: 'success', text: 'تم حفظ إعدادات الموقع بنجاح' });
     setTimeout(() => setMessage(null), 3000);
   };
