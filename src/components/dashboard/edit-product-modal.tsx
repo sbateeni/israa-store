@@ -230,7 +230,7 @@ export default function EditProductModal({
           <MultiImageUpload
             onImagesChange={handleImagesChange}
             maxImages={10}
-            maxSize={100}
+                          maxSize={10}
             initialImages={productImages}
           />
 

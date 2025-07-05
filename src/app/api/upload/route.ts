@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 // زيادة حد حجم الطلب لملفات الفيديو الكبيرة
 export const maxDuration = 300; // 5 دقائق للرفع
 
-// حدود Vercel Functions
+// حدود Vercel Functions - تم رفعها إلى 10MB
 const VERCEL_FUNCTION_LIMIT = 10 * 1024 * 1024; // 10MB - حد Vercel Functions
 
 export async function POST(req: NextRequest) {

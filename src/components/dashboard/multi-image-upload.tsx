@@ -17,7 +17,7 @@ interface MultiImageUploadProps {
 export default function MultiImageUpload({ 
   onImagesChange, 
   maxImages = 10, 
-  maxSize = 100,
+  maxSize = 10,
   initialImages = []
 }: MultiImageUploadProps) {
   const { toast } = useToast();
