@@ -7,7 +7,7 @@ export type Product = {
   price?: number;
   category?: ProductCategory;
   image?: string;
-  images?: string[];
+  images?: { url: string; isMain: boolean }[];
   video?: string;
   dataAiHint?: string;
   instagram?: string;

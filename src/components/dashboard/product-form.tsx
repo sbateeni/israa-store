@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import MultiImageUpload from "./multi-image-upload";
 
 interface Product {
   id: string;
@@ -13,6 +14,7 @@ interface Product {
   description: string;
   price: number;
   image: string;
+  images?: { url: string; isMain: boolean }[];
   category: string;
   whatsapp?: string;
   facebook?: string;
@@ -35,7 +37,7 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
     image: "",
   });
 
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [productImages, setProductImages] = useState<{ url: string; isMain: boolean }[]>([]);
   const [savingProduct, setSavingProduct] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -43,68 +45,15 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // معالجة اختيار الملفات
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setSelectedFiles(files);
-  };
-
-  // رفع ملف واحد واستخدامه كصورة للمنتج
-  const uploadAndUseFile = async (file: File): Promise<string> => {
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
-    if (!validTypes.includes(file.type)) {
-      throw new Error(`نوع الملف ${file.name} غير مدعوم`);
+  // معالجة تغيير الصور
+  const handleImagesChange = (images: { url: string; isMain: boolean }[]) => {
+    setProductImages(images);
+    
+    // تحديث الصورة الرئيسية في النموذج
+    const mainImage = images.find(img => img.isMain);
+    if (mainImage) {
+      setForm(prev => ({ ...prev, image: mainImage.url }));
     }
-
-    if (file.size > 10 * 1024 * 1024) {
-      throw new Error(`حجم الملف ${file.name} كبير جداً (الحد الأقصى 10MB)`);
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('key', `products-media/${Date.now()}-${file.name}`);
-
-    // Retry logic for 429 errors
-    let retries = 3;
-    let lastError: Error | null = null;
-
-    while (retries > 0) {
-      try {
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (response.status === 429) {
-          // Rate limited - wait and retry
-          const waitTime = (4 - retries) * 1000; // 1s, 2s, 3s
-          console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          retries--;
-          continue;
-        }
-
-        if (!response.ok) {
-          throw new Error(`فشل رفع ${file.name}: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        return data.url;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error('Unknown error');
-        
-        if (retries > 1) {
-          console.log(`Upload failed, retrying... (${retries - 1} attempts left)`);
-          retries--;
-          // Wait before retry
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } else {
-          break;
-        }
-      }
-    }
-
-    throw lastError || new Error(`فشل رفع ${file.name} بعد عدة محاولات`);
   };
 
   const handleSaveProduct = async () => {
@@ -117,11 +66,11 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
       return;
     }
 
-    // إذا لم يتم اختيار ملف ولم يتم إدخال رابط صورة
-    if (selectedFiles.length === 0 && !form.image) {
+    // التحقق من وجود صور
+    if (productImages.length === 0 && !form.image) {
       toast({
         title: "خطأ",
-        description: "يرجى اختيار ملف أو إدخال رابط صورة",
+        description: "يرجى رفع صورة واحدة على الأقل للمنتج",
         variant: "destructive",
       });
       return;
@@ -129,31 +78,14 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
 
     setSavingProduct(true);
     try {
-      let imageUrl = form.image;
-
-      // إذا تم اختيار ملف، قم برفعه أولاً
-      if (selectedFiles.length > 0) {
-        try {
-          const file = selectedFiles[0]; // نستخدم الملف الأول فقط
-          imageUrl = await uploadAndUseFile(file);
-          toast({
-            title: "تم رفع الملف بنجاح",
-            description: `تم رفع ${file.name} بنجاح`,
-          });
-        } catch (uploadError) {
-          console.error('Upload failed:', uploadError);
-          
-          // إذا فشل الرفع، اطلب من المستخدم إدخال رابط بديل
-          if (confirm('فشل رفع الملف. هل تريد إدخال رابط صورة بديل؟')) {
-            const fallbackUrl = prompt('أدخل رابط الصورة:');
-            if (fallbackUrl) {
-              imageUrl = fallbackUrl;
-            } else {
-              throw new Error('لم يتم إدخال رابط صورة بديل');
-            }
-          } else {
-            throw uploadError;
-          }
+      // تحديد الصورة الرئيسية
+      let mainImageUrl = form.image;
+      if (productImages.length > 0) {
+        const mainImage = productImages.find(img => img.isMain);
+        if (mainImage) {
+          mainImageUrl = mainImage.url;
+        } else {
+          mainImageUrl = productImages[0].url; // أول صورة كرئيسية
         }
       }
 
@@ -166,7 +98,8 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
         body: JSON.stringify({
           ...form,
           price: parseFloat(form.price),
-          image: imageUrl,
+          image: mainImageUrl,
+          images: productImages.length > 0 ? productImages : undefined,
         }),
       });
 
@@ -182,7 +115,7 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
           category: "",
           image: "",
         });
-        setSelectedFiles([]);
+        setProductImages([]);
         
         // إعادة تحميل المنتجات
         onProductAdded();
@@ -201,119 +134,104 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
   };
 
   return (
-    <Card>
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>إضافة منتج جديد</CardTitle>
-        <p className="text-sm text-gray-600">
-          اختر ملف صورة/فيديو أو أدخل رابط صورة مباشرة
-        </p>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* اختيار الملف */}
-          <div>
-            <label className="block mb-2 font-medium">اختر ملف صورة أو فيديو</label>
-            <input
-              type="file"
-              accept="image/*,video/*"
-              onChange={handleFileSelect}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              يدعم: JPG, PNG, GIF, WebP, MP4, WebM, OGG (الحد الأقصى 10MB)
-            </p>
-          </div>
-
-          {/* عرض الملف المختار */}
-          {selectedFiles.length > 0 && (
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <h4 className="font-medium mb-2">الملف المختار</h4>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">{selectedFiles[0].name}</span>
-                <span className="text-xs text-gray-500">
-                  {(selectedFiles[0].size / 1024 / 1024).toFixed(2)} MB
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* أو إدخال رابط صورة */}
-          <div className="border-t pt-4">
-            <label className="block mb-2 font-medium">أو أدخل رابط صورة مباشرة</label>
+      <CardContent className="space-y-6">
+        {/* معلومات المنتج الأساسية */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium">
+              اسم المنتج *
+            </label>
             <Input
-              name="image"
-              value={form.image}
+              id="name"
+              name="name"
+              value={form.name}
               onChange={handleInputChange}
-              placeholder="https://example.com/image.jpg"
+              placeholder="أدخل اسم المنتج"
+              required
             />
-            {form.image && (
-              <div className="mt-2">
-                <img 
-                  src={form.image} 
-                  alt="Preview" 
-                  className="w-32 h-32 object-cover rounded border"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
           </div>
 
-          {/* معلومات المنتج */}
-          <div className="border-t pt-4">
-            <h4 className="font-medium mb-3">معلومات المنتج</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1 font-medium">اسم المنتج</label>
-                <Input
-                  name="name"
-                  value={form.name}
-                  onChange={handleInputChange}
-                  placeholder="اسم المنتج"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">الفئة</label>
-                <Input
-                  name="category"
-                  value={form.category}
-                  onChange={handleInputChange}
-                  placeholder="فئة المنتج"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">السعر (₪)</label>
-                <Input
-                  name="price"
-                  type="number"
-                  value={form.price}
-                  onChange={handleInputChange}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block mb-1 font-medium">وصف المنتج</label>
-                <Textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleInputChange}
-                  placeholder="وصف المنتج..."
-                  rows={3}
-                />
-              </div>
-            </div>
+          <div className="space-y-2">
+            <label htmlFor="price" className="text-sm font-medium">
+              السعر *
+            </label>
+            <Input
+              id="price"
+              name="price"
+              type="number"
+              step="0.01"
+              value={form.price}
+              onChange={handleInputChange}
+              placeholder="0.00"
+              required
+            />
           </div>
-
-          {/* زر إضافة المنتج */}
-          <Button 
-            onClick={handleSaveProduct} 
-            disabled={savingProduct}
-            className="w-full"
-          >
-            {savingProduct ? "جاري الإضافة..." : "إضافة المنتج"}
-          </Button>
         </div>
+
+        <div className="space-y-2">
+          <label htmlFor="category" className="text-sm font-medium">
+            الفئة *
+          </label>
+          <Input
+            id="category"
+            name="category"
+            value={form.category}
+            onChange={handleInputChange}
+            placeholder="مثال: إلكترونيات، ملابس، أثاث"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="description" className="text-sm font-medium">
+            وصف المنتج *
+          </label>
+          <Textarea
+            id="description"
+            name="description"
+            value={form.description}
+            onChange={handleInputChange}
+            placeholder="أدخل وصفاً مفصلاً للمنتج"
+            rows={4}
+            required
+          />
+        </div>
+
+        {/* رفع الصور المتعددة */}
+        <MultiImageUpload
+          onImagesChange={handleImagesChange}
+          maxImages={10}
+          maxSize={10}
+        />
+
+        {/* رابط صورة بديل (اختياري) */}
+        <div className="space-y-2">
+          <label htmlFor="image" className="text-sm font-medium">
+            رابط صورة بديل (اختياري)
+          </label>
+          <Input
+            id="image"
+            name="image"
+            value={form.image}
+            onChange={handleInputChange}
+            placeholder="https://example.com/image.jpg"
+          />
+          <p className="text-xs text-gray-500">
+            يمكنك إضافة رابط صورة بديل إذا لم ترفع صوراً أعلاه
+          </p>
+        </div>
+
+        <Button
+          onClick={handleSaveProduct}
+          disabled={savingProduct}
+          className="w-full"
+        >
+          {savingProduct ? "جاري الحفظ..." : "حفظ المنتج"}
+        </Button>
       </CardContent>
     </Card>
   );

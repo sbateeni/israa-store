@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
       price: parseFloat(productData.price),
       category: productData.category,
       image: productData.image || '',
+      images: productData.images || undefined, // الصور المتعددة
       whatsapp: productData.whatsapp || '',
       facebook: productData.facebook || '',
       instagram: productData.instagram || '',

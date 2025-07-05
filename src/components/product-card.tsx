@@ -84,7 +84,17 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
     >
       <CardHeader className="p-0">
         <div className="relative aspect-square w-full">
-          {product && product.image ? (
+          {product && product.images && product.images.length > 0 ? (
+            // عرض الصورة الرئيسية من الصور المتعددة
+            <Image
+              src={product.images.find(img => img.isMain)?.url || product.images[0].url}
+              alt={product.name || 'Product'}
+              data-ai-hint={product.dataAiHint}
+              fill
+              className="object-cover rounded-t-2xl transition-transform duration-300 group-hover:scale-110 group-hover:brightness-105"
+            />
+          ) : product && product.image ? (
+            // عرض الصورة الواحدة (للتوافق مع المنتجات القديمة)
             <Image
               src={product.image as string}
               alt={product.name || 'Product'}
@@ -95,6 +105,13 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
               لا توجد صورة
+            </div>
+          )}
+          
+          {/* مؤشر الصور المتعددة */}
+          {product && product.images && product.images.length > 1 && (
+            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+              {product.images.length} صور
             </div>
           )}
         </div>
