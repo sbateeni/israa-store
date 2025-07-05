@@ -6,6 +6,9 @@ export const runtime = 'nodejs';
 // زيادة حد حجم الطلب لملفات الفيديو الكبيرة
 export const maxDuration = 300; // 5 دقائق للرفع
 
+// حدود Vercel Functions
+const VERCEL_FUNCTION_LIMIT = 10 * 1024 * 1024; // 10MB - حد Vercel Functions
+
 export async function POST(req: NextRequest) {
   console.log('Upload API called');
   
@@ -43,13 +46,24 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validate file size - increased limit for videos
-    const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB for videos, 10MB for images
+    // التحقق من حد Vercel Functions أولاً
+    if (file.size > VERCEL_FUNCTION_LIMIT) {
+      console.error('File exceeds Vercel Function limit:', file.size, 'Max allowed:', VERCEL_FUNCTION_LIMIT);
+      return NextResponse.json({ 
+        error: `حجم الملف كبير جداً. الحد الأقصى المسموح: ${(VERCEL_FUNCTION_LIMIT / (1024 * 1024)).toFixed(1)}MB`,
+        details: `حجم الملف: ${(file.size / (1024 * 1024)).toFixed(1)}MB، الحد الأقصى: ${(VERCEL_FUNCTION_LIMIT / (1024 * 1024)).toFixed(1)}MB`,
+        suggestion: 'يرجى ضغط الملف أو استخدام ملف أصغر'
+      }, { status: 413 });
+    }
+
+    // Validate file size - increased limits to 10MB
+    const maxSize = file.type.startsWith('video/') ? 10 * 1024 * 1024 : 10 * 1024 * 1024; // 10MB for all files
     if (file.size > maxSize) {
       console.error('File too large:', file.size, 'Max allowed:', maxSize);
       return NextResponse.json({ 
-        error: `File size exceeds ${maxSize / (1024 * 1024)}MB limit`,
-        details: `File size: ${file.size} bytes, Max allowed: ${maxSize} bytes`
+        error: `حجم الملف كبير جداً. الحد الأقصى: ${maxSize / (1024 * 1024)}MB`,
+        details: `حجم الملف: ${(file.size / (1024 * 1024)).toFixed(1)}MB، الحد الأقصى: ${maxSize / (1024 * 1024)}MB`,
+        suggestion: 'يرجى ضغط الملف أو استخدام ملف أصغر'
       }, { status: 413 });
     }
 
