@@ -3,6 +3,9 @@ import { put } from '@vercel/blob';
 
 export const runtime = 'nodejs';
 
+// زيادة حد حجم الطلب لملفات الفيديو الكبيرة
+export const maxDuration = 300; // 5 دقائق للرفع
+
 export async function POST(req: NextRequest) {
   console.log('Upload API called');
   
@@ -40,12 +43,13 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validate file size
-    if (file.size > 10 * 1024 * 1024) {
-      console.error('File too large:', file.size);
+    // Validate file size - increased limit for videos
+    const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB for videos, 10MB for images
+    if (file.size > maxSize) {
+      console.error('File too large:', file.size, 'Max allowed:', maxSize);
       return NextResponse.json({ 
-        error: 'File size exceeds 10MB limit',
-        details: `File size: ${file.size} bytes`
+        error: `File size exceeds ${maxSize / (1024 * 1024)}MB limit`,
+        details: `File size: ${file.size} bytes, Max allowed: ${maxSize} bytes`
       }, { status: 413 });
     }
 
