@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/hooks/use-settings";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -146,6 +147,17 @@ export default function LoginPage() {
                   onClick={handleBackToHome}
                 >
                   العودة للصفحة الرئيسية
+                </Button>
+                
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  className="w-full text-sm"
+                  asChild
+                >
+                  <Link href="/forgot-password">
+                    نسيت كلمة المرور؟
+                  </Link>
                 </Button>
               </div>
             </form>
