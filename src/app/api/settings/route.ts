@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { put } from '@vercel/blob';
+import { put, del } from '@vercel/blob';
 
 const BLOB_API_URL = "https://api.vercel.com/v2/blob";
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || "vercel_blob_rw_3rYI5trXqmi2Rgmd_40mfx02cgDWi0OdNFlLEf8fa1ZTQXi";
@@ -9,14 +9,21 @@ const PASSWORD_BLOB_KEY = "dashboard-password.json";
 export async function GET() {
   try {
     console.log('Fetching settings from Vercel Blob Storage...');
+    console.log('Using BLOB_TOKEN:', BLOB_TOKEN ? 'Token exists' : 'No token');
     
     // محاولة جلب الإعدادات من Blob Storage
     const [socialRes, passRes] = await Promise.all([
       fetch(`${BLOB_API_URL}/get?pathname=${SOCIAL_BLOB_KEY}`, { 
-        headers: { Authorization: `Bearer ${BLOB_TOKEN}` } 
+        headers: { 
+          Authorization: `Bearer ${BLOB_TOKEN}`,
+          'Content-Type': 'application/json'
+        } 
       }),
       fetch(`${BLOB_API_URL}/get?pathname=${PASSWORD_BLOB_KEY}`, { 
-        headers: { Authorization: `Bearer ${BLOB_TOKEN}` } 
+        headers: { 
+          Authorization: `Bearer ${BLOB_TOKEN}`,
+          'Content-Type': 'application/json'
+        } 
       })
     ]);
 
@@ -30,7 +37,7 @@ export async function GET() {
       console.log('Social data loaded:', socialData);
       social = socialData;
     } else {
-      console.log('Social blob not found, using defaults');
+      console.log('Social blob not found (status:', socialRes.status, '), using defaults');
     }
 
     if (passRes.ok) {
@@ -38,7 +45,7 @@ export async function GET() {
       console.log('Password data loaded:', passData);
       password = passData;
     } else {
-      console.log('Password blob not found, using defaults');
+      console.log('Password blob not found (status:', passRes.status, '), using defaults');
     }
 
     const combinedSettings = { ...social, ...password };
@@ -60,6 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     console.log('Received POST request with body:', body);
+    console.log('Using BLOB_TOKEN:', BLOB_TOKEN ? 'Token exists' : 'No token');
     
     // التحقق من وجود البيانات
     if (!body) {
