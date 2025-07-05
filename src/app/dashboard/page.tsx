@@ -77,6 +77,16 @@ export default function DashboardPage() {
       if (form.video) {
         videoUrl = await uploadMedia(form.video);
       }
+      
+      // تنسيق رابط واتساب
+      let whatsappUrl = form.whatsapp;
+      if (whatsappUrl && !whatsappUrl.startsWith('https://wa.me/')) {
+        // إذا كان المستخدم كتب رقم فقط، أضف الرابط الكامل
+        if (whatsappUrl.match(/^\d+$/)) {
+          whatsappUrl = `https://wa.me/${whatsappUrl}`;
+        }
+      }
+      
       const newProduct: Product = {
         id: editingProduct ? editingProduct.id : Date.now(),
         name: form.name,
@@ -84,7 +94,7 @@ export default function DashboardPage() {
         price: parseFloat(form.price),
         image: imageUrl,
         video: videoUrl,
-        whatsapp: form.whatsapp || undefined,
+        whatsapp: whatsappUrl || undefined,
         facebook: form.facebook || undefined,
         instagram: form.instagram || undefined,
         snapchat: form.snapchat || undefined,
@@ -120,13 +130,20 @@ export default function DashboardPage() {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    
+    // استخراج الرقم من رابط واتساب للعرض
+    let whatsappDisplay = product.whatsapp || "";
+    if (whatsappDisplay.startsWith('https://wa.me/')) {
+      whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
+    }
+    
     setForm({
       name: product.name,
       description: product.description,
       price: product.price.toString(),
       image: undefined,
       video: undefined,
-      whatsapp: product.whatsapp || "",
+      whatsapp: whatsappDisplay,
       facebook: product.facebook || "",
       instagram: product.instagram || "",
       snapchat: product.snapchat || "",
@@ -150,7 +167,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-3xl mx-auto p-4">
       {message && (
-        <div className={`mb-4 p-2 rounded text-center ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+        <div className={`mb-4 p-4 rounded-lg text-center font-medium shadow-lg ${message.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
           {message.text}
         </div>
       )}
@@ -171,7 +188,7 @@ export default function DashboardPage() {
             name="name"
             value={form.name}
             onChange={handleInputChange}
-            className="border rounded w-full p-2"
+            className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
         </div>
@@ -181,7 +198,7 @@ export default function DashboardPage() {
             name="description"
             value={form.description}
             onChange={handleInputChange}
-            className="border rounded w-full p-2"
+            className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
         </div>
@@ -192,7 +209,7 @@ export default function DashboardPage() {
             type="number"
             value={form.price}
             onChange={handleInputChange}
-            className="border rounded w-full p-2"
+            className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
         </div>
@@ -228,9 +245,10 @@ export default function DashboardPage() {
                 type="url"
                 value={form.whatsapp}
                 onChange={handleInputChange}
-                className="border rounded w-full p-2"
-                placeholder="https://wa.me/رقم_الهاتف"
+                className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="https://wa.me/966500000000"
               />
+              <p className="text-xs text-gray-500 mt-1">اكتب الرقم فقط بدون + (مثال: 966500000000)</p>
             </div>
             <div>
               <label className="block mb-1 text-blue-600">رابط فيسبوك</label>
@@ -239,7 +257,7 @@ export default function DashboardPage() {
                 type="url"
                 value={form.facebook}
                 onChange={handleInputChange}
-                className="border rounded w-full p-2"
+                className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="https://facebook.com/username"
               />
             </div>
@@ -250,7 +268,7 @@ export default function DashboardPage() {
                 type="url"
                 value={form.instagram}
                 onChange={handleInputChange}
-                className="border rounded w-full p-2"
+                className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="https://instagram.com/username"
               />
             </div>
@@ -261,14 +279,14 @@ export default function DashboardPage() {
                 type="url"
                 value={form.snapchat}
                 onChange={handleInputChange}
-                className="border rounded w-full p-2"
+                className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="https://snapchat.com/add/username"
               />
             </div>
           </div>
         </div>
         
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+        <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-lg">
           {editingProduct ? "تعديل المنتج" : "إضافة منتج"}
         </button>
         {editingProduct && (
@@ -338,13 +356,13 @@ export default function DashboardPage() {
               </div>
               <div className="mt-4 md:mt-0 flex gap-2">
                 <button
-                  className="bg-yellow-500 text-white px-3 py-1 rounded"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md"
                   onClick={() => handleEdit(product)}
                 >
                   تعديل
                 </button>
                 <button
-                  className="bg-red-600 text-white px-3 py-1 rounded"
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md"
                   onClick={() => handleDelete(product.id)}
                 >
                   حذف

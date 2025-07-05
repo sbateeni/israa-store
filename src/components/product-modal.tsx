@@ -107,11 +107,17 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
             <DialogDescription className="text-base flex-grow">
               {product.description}
               
-              {/* Social Media Icons */}
-                              <div className="mt-4 flex justify-center gap-3">
+                            {/* Social Media Icons */}
+              <div className="mt-4 text-center">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 mb-3">
+                  <p className="text-sm text-gray-700 font-medium">
+                    💬 للشراء قم بالضغط على وسيلة التواصل المفضلة لديك
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3">
                   <button
                     onClick={() => window.open(product.whatsapp || 'https://wa.me/', '_blank')}
-                    className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-colors duration-200"
+                    className="w-12 h-12 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="واتساب"
                   >
                     <WhatsAppIcon />
@@ -119,7 +125,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                   
                   <button
                     onClick={() => window.open(product.facebook || 'https://facebook.com', '_blank')}
-                    className="w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-colors duration-200"
+                    className="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="فيسبوك"
                   >
                     <Facebook className="h-5 w-5 text-white" />
@@ -127,19 +133,20 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                   
                   <button
                     onClick={() => window.open(product.instagram || 'https://instagram.com', '_blank')}
-                    className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full flex items-center justify-center transition-colors duration-200"
+                    className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="انستغرام"
                   >
                     <Instagram className="h-5 w-5 text-white" />
                   </button>
                   
-                  <button
+                                                        <button
                     onClick={() => window.open(product.snapchat || 'https://snapchat.com', '_blank')}
-                    className="w-10 h-10 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-colors duration-200"
+                    className="w-12 h-12 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="سناب شات"
                   >
-                    <SnapchatIcon />
-                  </button>
+                      <SnapchatIcon />
+                    </button>
+                  </div>
                 </div>
             </DialogDescription>
             

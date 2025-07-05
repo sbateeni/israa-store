@@ -14,7 +14,7 @@ function withDefaultSocials(product: Omit<Product, 'facebook' | 'instagram' | 's
     facebook: "https://facebook.com",
     instagram: "https://instagram.com",
     snapchat: "https://www.snapchat.com/",
-    whatsapp: "https://wa.me/",
+    whatsapp: "https://wa.me/966500000000", // رقم افتراضي للمثال
     ...product,
   };
 }
