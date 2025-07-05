@@ -1,5 +1,5 @@
 import imageCompression from 'browser-image-compression';
-import { simpleVideoCompression } from './video-compression-fallback';
+import { simpleVideoCompression, compressVideoWithAudio, simpleVideoCompressionWithAudio } from './video-compression-fallback';
 
 export interface CompressedFile {
   file: File;
@@ -76,13 +76,9 @@ export async function compressVideo(file: File): Promise<CompressedFile> {
       };
     }
     
-    // استخدام الطريقة البديلة لضغط الفيديو
-    console.log('AutoCompress: Using fallback compression method');
-    const compressedFile = await simpleVideoCompression(file, {
-      maxSizeMB: 3,
-      quality: 0.7,
-      fps: 15
-    });
+    // استخدام الطريقة البسيطة لضغط الفيديو مع الحفاظ على الصوت
+    console.log('AutoCompress: Using simple audio-preserving compression method');
+    const compressedFile = await simpleVideoCompressionWithAudio(file);
     
     const actualCompressionRatio = ((file.size - compressedFile.size) / file.size) * 100;
     
