@@ -122,54 +122,103 @@ export async function deleteProduct(productId: number) {
 
 // جلب إعدادات الموقع من الخادم
 export async function fetchSiteSettings() {
-  try {
-    // إضافة timestamp لمنع التخزين المؤقت
-    const res = await fetch("/api/settings?" + new Date().getTime());
-    if (!res.ok) return getDefaultSettings();
-    const data = await res.json();
-    console.log('Fetched site settings:', data);
-    return data || getDefaultSettings();
-  } catch (error) {
-    console.error('Error fetching site settings:', error);
-    return getDefaultSettings();
+  const maxRetries = 3;
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt} of ${maxRetries} to fetch settings...`);
+      
+      // إضافة timestamp لمنع التخزين المؤقت
+      const res = await fetch("/api/settings?" + new Date().getTime());
+      
+      if (!res.ok) {
+        console.log(`Fetch attempt ${attempt} failed with status:`, res.status);
+        if (attempt === maxRetries) {
+          return getDefaultSettings();
+        }
+        continue;
+      }
+      
+      const data = await res.json();
+      console.log('Fetched site settings:', data);
+      
+      if (data && (data.whatsapp || data.facebook || data.instagram || data.snapchat || data.dashboardPassword)) {
+        console.log(`✅ Settings fetched successfully on attempt ${attempt}`);
+        return data;
+      } else {
+        console.log(`Attempt ${attempt}: Settings appear to be empty, retrying...`);
+        if (attempt === maxRetries) {
+          return getDefaultSettings();
+        }
+      }
+      
+    } catch (error) {
+      console.error(`Error fetching site settings (attempt ${attempt}):`, error);
+      lastError = error;
+      
+      if (attempt < maxRetries) {
+        console.log(`Retrying in 1 second...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
   }
+  
+  console.error('All attempts to fetch settings failed');
+  return getDefaultSettings();
 }
 
 // حفظ إعدادات الموقع على الخادم
 export async function saveSiteSettings(settings: any) {
   console.log('Saving site settings:', settings);
   
-  try {
-    console.log('Sending settings to /api/settings...');
-    const res = await fetch("/api/settings", {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(settings),
-    });
-    
-    console.log('Settings save response status:', res.status);
-    
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Settings save failed:', errorText);
-      throw new Error("فشل حفظ إعدادات الموقع: " + errorText);
+  const maxRetries = 3;
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt} of ${maxRetries} to save settings...`);
+      
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+      
+      console.log('Settings save response status:', res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Settings save failed:', errorText);
+        throw new Error("فشل حفظ إعدادات الموقع: " + errorText);
+      }
+      
+      const data = await res.json();
+      console.log('Settings save successful:', data);
+      
+      // التحقق من أن الحفظ تم بنجاح
+      if (!data.success) {
+        throw new Error("فشل حفظ الإعدادات: " + (data.error || 'خطأ غير معروف'));
+      }
+      
+      console.log(`✅ Settings saved successfully on attempt ${attempt}`);
+      return !!data.success;
+      
+    } catch (error) {
+      console.error(`Error in saveSiteSettings (attempt ${attempt}):`, error);
+      lastError = error;
+      
+      if (attempt < maxRetries) {
+        console.log(`Retrying in 1 second...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
-    
-    const data = await res.json();
-    console.log('Settings save successful:', data);
-    
-    // التحقق من أن الحفظ تم بنجاح
-    if (!data.success) {
-      throw new Error("فشل حفظ الإعدادات: " + (data.error || 'خطأ غير معروف'));
-    }
-    
-    return !!data.success;
-  } catch (error) {
-    console.error('Error in saveSiteSettings:', error);
-    throw error;
   }
+  
+  console.error('All attempts to save settings failed');
+  throw lastError;
 }
 
 // الإعدادات الافتراضية

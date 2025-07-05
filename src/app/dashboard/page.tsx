@@ -39,7 +39,9 @@ export default function DashboardPage() {
     snapchat: "",
     dashboardPassword: "",
   });
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -66,6 +68,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        console.log('Loading settings from server...');
         const settings = await fetchSiteSettings();
         console.log('Loaded settings from server:', settings);
         
@@ -82,6 +85,14 @@ export default function DashboardPage() {
         
         console.log('Formatted settings for display:', formattedSettings);
         setSiteSettings(formattedSettings);
+        setSettingsLoaded(true);
+        
+        // التحقق من أن الإعدادات تم تحميلها بشكل صحيح
+        if (settings.whatsapp || settings.facebook || settings.instagram || settings.snapchat || settings.dashboardPassword) {
+          console.log('✅ Settings loaded successfully with data');
+        } else {
+          console.log('⚠️ Settings loaded but appear to be empty');
+        }
       } catch (error) {
         console.error('Error loading settings:', error);
         // في حالة الخطأ، استخدام الإعدادات الافتراضية
@@ -122,6 +133,7 @@ export default function DashboardPage() {
   };
 
   const handleSaveSettings = async () => {
+    setSavingSettings(true);
     try {
       // تنسيق روابط التواصل الاجتماعي قبل الحفظ
       let formattedSettings = { ...siteSettings };
@@ -140,6 +152,13 @@ export default function DashboardPage() {
       // حفظ الإعدادات على الخادم
       const saveResult = await saveSiteSettings(formattedSettings);
       console.log('Save result:', saveResult);
+      
+      if (!saveResult) {
+        throw new Error('فشل حفظ الإعدادات');
+      }
+      
+      // انتظار قليلاً للتأكد من حفظ البيانات
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // إعادة تحميل الإعدادات من الخادم للتأكد من الحفظ
       const updatedSettings = await fetchSiteSettings();
@@ -163,10 +182,12 @@ export default function DashboardPage() {
       
       setMessage({ type: 'success', text: 'تم حفظ إعدادات الموقع بنجاح' });
       setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving settings:', error);
-      setMessage({ type: 'error', text: 'فشل حفظ إعدادات الموقع' });
-      setTimeout(() => setMessage(null), 3000);
+      setMessage({ type: 'error', text: 'فشل حفظ إعدادات الموقع: ' + (error.message || 'خطأ غير معروف') });
+      setTimeout(() => setMessage(null), 5000);
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -326,6 +347,11 @@ export default function DashboardPage() {
       <div className="border p-4 rounded mb-6 bg-gray-50">
         <h2 className="text-lg font-semibold mb-3 text-gray-800">إعدادات الموقع العامة</h2>
         <p className="text-sm text-gray-600 mb-4">هذه الروابط ستُستخدم تلقائياً في جميع المنتجات الجديدة</p>
+        {!settingsLoaded && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800">جاري تحميل الإعدادات...</p>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 text-green-600 font-medium">رابط واتساب الافتراضي</label>
@@ -393,9 +419,14 @@ export default function DashboardPage() {
         <button
           type="button"
           onClick={handleSaveSettings}
-          className="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md"
+          disabled={savingSettings}
+          className={`mt-4 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md ${
+            savingSettings 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-green-600 hover:bg-green-700'
+          } text-white`}
         >
-          حفظ الإعدادات
+          {savingSettings ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4 border p-4 rounded mb-8">
