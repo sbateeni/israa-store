@@ -43,6 +43,10 @@ export default function DashboardPage() {
     image: "",
   });
 
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
   const [socialForm, setSocialForm] = useState({
     whatsapp: "",
     facebook: "",
@@ -61,20 +65,32 @@ export default function DashboardPage() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  // تحميل المنتجات
+  // تحميل المنتجات والملفات
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch('/api/products');
-        if (response.ok) {
-          const data = await response.json();
-          setProducts(data);
+        // تحميل المنتجات
+        const productsResponse = await fetch('/api/products');
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          setProducts(productsData);
+        }
+
+        // تحميل الملفات المحفوظة (من localStorage)
+        const savedFiles = localStorage.getItem('uploadedFiles');
+        if (savedFiles) {
+          try {
+            const files = JSON.parse(savedFiles);
+            setUploadedFiles(files);
+          } catch (error) {
+            console.error('Error parsing saved files:', error);
+          }
         }
       } catch (error) {
-        console.error('Error loading products:', error);
+        console.error('Error loading data:', error);
       }
     };
-    loadProducts();
+    loadData();
   }, []);
 
   // تحميل إعدادات التواصل الاجتماعي
@@ -103,6 +119,108 @@ export default function DashboardPage() {
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // معالجة اختيار الملفات
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles(files);
+  };
+
+  // رفع الملفات
+  const handleUploadFiles = async () => {
+    if (selectedFiles.length === 0) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار ملفات للرفع",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of selectedFiles) {
+        // التحقق من نوع الملف
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+        if (!validTypes.includes(file.type)) {
+          toast({
+            title: "خطأ",
+            description: `نوع الملف ${file.name} غير مدعوم`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // التحقق من حجم الملف (10MB كحد أقصى)
+        if (file.size > 10 * 1024 * 1024) {
+          toast({
+            title: "خطأ",
+            description: `حجم الملف ${file.name} كبير جداً (الحد الأقصى 10MB)`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('key', `products-media/${Date.now()}-${file.name}`);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          uploadedUrls.push(data.url);
+          toast({
+            title: "تم الرفع بنجاح",
+            description: `تم رفع ${file.name} بنجاح`,
+          });
+        } else {
+          throw new Error(`فشل رفع ${file.name}`);
+        }
+      }
+
+      const newFiles = [...uploadedFiles, ...uploadedUrls];
+      setUploadedFiles(newFiles);
+      localStorage.setItem('uploadedFiles', JSON.stringify(newFiles));
+      setSelectedFiles([]);
+      
+      if (uploadedUrls.length > 0) {
+        toast({
+          title: "تم الرفع بنجاح",
+          description: `تم رفع ${uploadedUrls.length} ملف بنجاح`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل رفع بعض الملفات",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // نسخ رابط الملف
+  const copyToClipboard = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "تم النسخ",
+      description: "تم نسخ الرابط إلى الحافظة",
+    });
+  };
+
+  // حذف ملف من القائمة
+  const removeFile = (url: string) => {
+    const newFiles = uploadedFiles.filter(file => file !== url);
+    setUploadedFiles(newFiles);
+    localStorage.setItem('uploadedFiles', JSON.stringify(newFiles));
   };
 
   const handleSaveProduct = async () => {
@@ -314,8 +432,9 @@ export default function DashboardPage() {
       <h1 className="text-3xl font-bold mb-8 text-center">لوحة التحكم</h1>
 
       <Tabs defaultValue="products" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="products">إدارة المنتجات</TabsTrigger>
+          <TabsTrigger value="media">إدارة الملفات</TabsTrigger>
           <TabsTrigger value="social">روابط التواصل</TabsTrigger>
           <TabsTrigger value="password">كلمة المرور</TabsTrigger>
         </TabsList>
@@ -364,6 +483,18 @@ export default function DashboardPage() {
                     onChange={handleInputChange}
                     placeholder="https://example.com/image.jpg"
                   />
+                  {form.image && (
+                    <div className="mt-2">
+                      <img 
+                        src={form.image} 
+                        alt="Preview" 
+                        className="w-32 h-32 object-cover rounded border"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block mb-1 font-medium">وصف المنتج</label>
@@ -414,6 +545,123 @@ export default function DashboardPage() {
                 ))}
                 {products.length === 0 && (
                   <p className="text-center text-gray-500">لا توجد منتجات حالياً</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="media" className="space-y-6">
+          {/* رفع ملفات جديدة */}
+          <Card>
+            <CardHeader>
+              <CardTitle>رفع ملفات جديدة</CardTitle>
+              <p className="text-sm text-gray-600">
+                ارفع الصور والفيديوهات لاستخدامها في المنتجات
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block mb-2 font-medium">اختر الملفات</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleFileSelect}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    يدعم: JPG, PNG, GIF, WebP, MP4, WebM, OGG (الحد الأقصى 10MB لكل ملف)
+                  </p>
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">الملفات المختارة ({selectedFiles.length})</h4>
+                    <div className="space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-sm">{file.name}</span>
+                          <span className="text-xs text-gray-500">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <Button 
+                      onClick={handleUploadFiles} 
+                      disabled={uploading}
+                      className="mt-4"
+                    >
+                      {uploading ? "جاري الرفع..." : `رفع ${selectedFiles.length} ملف`}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* الملفات المرفوعة */}
+          <Card>
+            <CardHeader>
+              <CardTitle>الملفات المرفوعة ({uploadedFiles.length})</CardTitle>
+              <p className="text-sm text-gray-600">
+                انسخ الروابط لاستخدامها في المنتجات
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {uploadedFiles.map((url, index) => (
+                  <div key={index} className="border p-4 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                            <img 
+                              src={url} 
+                              alt="Preview" 
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                              <span className="text-xs">فيديو</span>
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <p className="text-sm font-medium truncate">{url.split('/').pop()}</p>
+                            <p className="text-xs text-gray-500 truncate">{url}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(url)}
+                        >
+                          نسخ الرابط
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setForm(prev => ({ ...prev, image: url }))}
+                        >
+                          استخدم كصورة
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removeFile(url)}
+                        >
+                          حذف
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {uploadedFiles.length === 0 && (
+                  <p className="text-center text-gray-500">لا توجد ملفات مرفوعة</p>
                 )}
               </div>
             </CardContent>
