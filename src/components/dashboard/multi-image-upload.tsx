@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,21 +11,41 @@ interface MultiImageUploadProps {
   onImagesChange: (images: { url: string; isMain: boolean }[]) => void;
   maxImages?: number;
   maxSize?: number; // بالـ MB
+  initialImages?: { url: string; isMain: boolean }[];
 }
 
 export default function MultiImageUpload({ 
   onImagesChange, 
   maxImages = 10, 
-  maxSize = 100 
+  maxSize = 100,
+  initialImages = []
 }: MultiImageUploadProps) {
   const { toast } = useToast();
   const [images, setImages] = useState<{ url: string; isMain: boolean; file?: File }[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
+  // تحميل الصور الأولية
+  useEffect(() => {
+    if (initialImages && initialImages.length > 0) {
+      const formattedImages = initialImages.map(img => ({
+        url: img.url,
+        isMain: img.isMain,
+        file: undefined
+      }));
+      setImages(formattedImages);
+      console.log('MultiImageUpload: Loaded initial images:', formattedImages);
+    }
+  }, [initialImages]);
 
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('MultiImageUpload: File select triggered');
+    const files = event.target.files;
+    if (!files) {
+      console.log('MultiImageUpload: No files selected');
+      return;
+    }
+
+    console.log('MultiImageUpload: Files selected:', files.length);
     const fileArray = Array.from(files);
     
     // التحقق من عدد الصور
@@ -59,16 +79,26 @@ export default function MultiImageUpload({
         const formData = new FormData();
         formData.append('file', file);
         
+        // إنشاء مفتاح فريد للملف
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(2, 15);
+        const key = `products/${timestamp}_${randomId}_${file.name}`;
+        formData.append('key', key);
+        
+        console.log('MultiImageUpload: Uploading file:', file.name, 'with key:', key);
         const response = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
 
         if (!response.ok) {
-          throw new Error(`فشل رفع الملف: ${file.name}`);
+          const errorText = await response.text();
+          console.error('MultiImageUpload: Upload failed:', errorText);
+          throw new Error(`فشل رفع الملف: ${file.name} - ${errorText}`);
         }
 
         const data = await response.json();
+        console.log('MultiImageUpload: Upload successful:', data);
         
         newImages.push({
           url: data.url,
@@ -87,6 +117,7 @@ export default function MultiImageUpload({
       });
 
     } catch (error) {
+      console.error('MultiImageUpload: Upload error:', error);
       toast({
         title: "خطأ",
         description: error instanceof Error ? error.message : "فشل رفع الملفات",
@@ -94,6 +125,11 @@ export default function MultiImageUpload({
       });
     } finally {
       setUploading(false);
+      // إعادة تعيين input
+      const input = document.getElementById('multi-image-upload') as HTMLInputElement;
+      if (input) {
+        input.value = '';
+      }
     }
   }, [images, maxImages, maxSize, onImagesChange, toast]);
 
@@ -132,6 +168,7 @@ export default function MultiImageUpload({
       return;
     }
 
+    console.log('MultiImageUpload: Adding image from URL:', url);
     const newImage = {
       url,
       isMain: images.length === 0,
@@ -141,6 +178,11 @@ export default function MultiImageUpload({
     const updatedImages = [...images, newImage];
     setImages(updatedImages);
     onImagesChange(updatedImages.map(img => ({ url: img.url, isMain: img.isMain })));
+    
+    toast({
+      title: "تمت الإضافة",
+      description: "تم إضافة الصورة من الرابط بنجاح",
+    });
   };
 
   return (
@@ -182,11 +224,17 @@ export default function MultiImageUpload({
               id="multi-image-upload"
             />
             
-            <label htmlFor="multi-image-upload">
+            <label htmlFor="multi-image-upload" className="cursor-pointer">
               <Button
                 variant="outline"
                 disabled={uploading || images.length >= maxImages}
-                className="cursor-pointer"
+                type="button"
+                onClick={() => {
+                  const input = document.getElementById('multi-image-upload') as HTMLInputElement;
+                  if (input) {
+                    input.click();
+                  }
+                }}
               >
                 {uploading ? "جاري الرفع..." : `اختيار الصور (${images.length}/${maxImages})`}
               </Button>

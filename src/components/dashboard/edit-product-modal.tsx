@@ -64,7 +64,16 @@ export default function EditProductModal({
         category: product.category || "",
         image: product.image || "",
       });
-      setProductImages(product.images || []);
+      
+      // تحميل الصور الموجودة للمنتج
+      const existingImages = product.images && product.images.length > 0 
+        ? product.images 
+        : product.image 
+          ? [{ url: product.image, isMain: true }]
+          : [];
+      
+      setProductImages(existingImages);
+      console.log('EditProductModal: Loaded product images:', existingImages);
     }
   }, [product, isOpen]);
 
@@ -222,6 +231,7 @@ export default function EditProductModal({
             onImagesChange={handleImagesChange}
             maxImages={10}
             maxSize={100}
+            initialImages={productImages}
           />
 
           {/* رابط صورة بديل (اختياري) */}
