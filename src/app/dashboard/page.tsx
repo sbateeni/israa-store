@@ -108,6 +108,20 @@ export default function DashboardPage() {
     setSiteSettings((prev) => ({ ...prev, [name]: value }));
   };
 
+  // دالة مساعدة لتنسيق روابط التواصل الاجتماعي للعرض
+  const formatSocialLink = (type: 'whatsapp' | 'facebook' | 'instagram' | 'snapchat', productValue?: string, settingsValue?: string): string | undefined => {
+    if (productValue) return productValue; // إذا كان المنتج له رابط خاص، استخدمه
+    
+    if (!settingsValue) return undefined; // إذا لم تكن هناك إعدادات، لا تعرض أيقونة
+    
+    // تنسيق رابط واتساب
+    if (type === 'whatsapp' && settingsValue && !settingsValue.startsWith('http')) {
+      return `https://wa.me/${settingsValue}`;
+    }
+    
+    return settingsValue;
+  };
+
   const handleSaveSettings = async () => {
     try {
       // تنسيق روابط التواصل الاجتماعي قبل الحفظ
@@ -619,23 +633,23 @@ export default function DashboardPage() {
                 )}
                 {/* Social Media Links Display */}
                 <div className="flex gap-2 mt-2">
-                  {(product.whatsapp || siteSettings.whatsapp) && (
-                    <a href={product.whatsapp || siteSettings.whatsapp} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                  {formatSocialLink('whatsapp', product.whatsapp, siteSettings.whatsapp) && (
+                    <a href={formatSocialLink('whatsapp', product.whatsapp, siteSettings.whatsapp)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
                       واتساب
                     </a>
                   )}
-                  {(product.facebook || siteSettings.facebook) && (
-                    <a href={product.facebook || siteSettings.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                  {formatSocialLink('facebook', product.facebook, siteSettings.facebook) && (
+                    <a href={formatSocialLink('facebook', product.facebook, siteSettings.facebook)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
                       فيسبوك
                     </a>
                   )}
-                  {(product.instagram || siteSettings.instagram) && (
-                    <a href={product.instagram || siteSettings.instagram} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800">
+                  {formatSocialLink('instagram', product.instagram, siteSettings.instagram) && (
+                    <a href={formatSocialLink('instagram', product.instagram, siteSettings.instagram)} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800">
                       انستغرام
                     </a>
                   )}
-                  {(product.snapchat || siteSettings.snapchat) && (
-                    <a href={product.snapchat || siteSettings.snapchat} target="_blank" rel="noopener noreferrer" className="text-yellow-600 hover:text-yellow-800">
+                  {formatSocialLink('snapchat', product.snapchat, siteSettings.snapchat) && (
+                    <a href={formatSocialLink('snapchat', product.snapchat, siteSettings.snapchat)} target="_blank" rel="noopener noreferrer" className="text-yellow-600 hover:text-yellow-800">
                       سناب شات
                     </a>
                   )}
@@ -662,3 +676,4 @@ export default function DashboardPage() {
     </div>
   );
 } 
+ 

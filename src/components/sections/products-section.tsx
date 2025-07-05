@@ -76,15 +76,15 @@ export default function ProductsSection() {
       {loading ? (
         <div className="text-center py-8">جاري تحميل المنتجات...</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {filteredProducts.map((product, index) => (
-            <ProductCard 
+        <ProductCard 
                 key={`product-${index}`} 
-                product={product} 
-                onViewDetails={() => handleProductClick(product)}
+            product={product} 
+            onViewDetails={() => handleProductClick(product)}
             />
-          ))}
-        </div>
+        ))}
+      </div>
       )}
       <ProductModal product={selectedProduct} onOpenChange={(isOpen) => !isOpen && setSelectedProduct(null)}/>
     </section>

@@ -144,7 +144,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                     className="w-12 h-12 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="سناب شات"
                   >
-                      <SnapchatIcon />
+                                <SnapchatIcon />
                     </button>
                   </div>
                 </div>
