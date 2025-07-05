@@ -9,9 +9,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { ProductForm, ProductList, SocialLinksForm, PasswordForm } from "@/components/dashboard";
-import PasswordFix from "@/components/dashboard/password-fix";
-import EncryptPassword from "@/components/dashboard/encrypt-password";
+import { ProductForm, ProductList, SocialLinksForm } from "@/components/dashboard";
+import UnifiedPasswordManager from "@/components/dashboard/unified-password-manager";
 
 export default function DashboardPage() {
   const { loading, error } = useSettings();
@@ -105,42 +104,9 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="products" className="space-y-6">
-                      <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">إدارة المنتجات</h2>
-                        <Button
-              onClick={handleLogout}
-                          variant="outline"
-                          size="sm"
-              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
-            >
-              <LogOut className="h-3 w-3" />
-              تسجيل الخروج
-                        </Button>
-                      </div>
-          <ProductForm onProductAdded={handleProductAdded} />
-          <ProductList refreshTrigger={refreshTrigger} />
-        </TabsContent>
-
-        <TabsContent value="social" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">روابط التواصل</h2>
-              <Button 
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
-            >
-              <LogOut className="h-3 w-3" />
-              تسجيل الخروج
-              </Button>
-          </div>
-          <SocialLinksForm />
-        </TabsContent>
-
-        <TabsContent value="password" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">كلمة المرور</h2>
-                        <Button 
+            <Button
               onClick={handleLogout}
               variant="outline"
               size="sm"
@@ -150,9 +116,40 @@ export default function DashboardPage() {
               تسجيل الخروج
             </Button>
           </div>
-          <EncryptPassword />
-          <PasswordFix />
-          <PasswordForm />
+          <ProductForm onProductAdded={handleProductAdded} />
+          <ProductList refreshTrigger={refreshTrigger} />
+        </TabsContent>
+
+        <TabsContent value="social" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">روابط التواصل</h2>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
+            >
+              <LogOut className="h-3 w-3" />
+              تسجيل الخروج
+            </Button>
+          </div>
+          <SocialLinksForm />
+        </TabsContent>
+
+        <TabsContent value="password" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">إدارة كلمة المرور</h2>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
+            >
+              <LogOut className="h-3 w-3" />
+              تسجيل الخروج
+            </Button>
+          </div>
+          <UnifiedPasswordManager />
         </TabsContent>
       </Tabs>
 
