@@ -3,6 +3,11 @@ import { put, list } from '@vercel/blob';
 
 const PASSWORD_BLOB_KEY = "dashboard-password.json";
 
+// دالة تشفير بسيطة لكلمة المرور
+function encryptPassword(password: string): string {
+  return Buffer.from(password).toString('base64');
+}
+
 export async function POST(req: NextRequest) {
   try {
     console.log('=== POST /api/fix-password ===');
@@ -20,8 +25,8 @@ export async function POST(req: NextRequest) {
     
     console.log('Fixing password format in Blob Storage...');
     
-    // إنشاء كلمة المرور بالشكل الصحيح
-    const passwordData = { password: newPassword };
+    // إنشاء كلمة المرور بالشكل الصحيح مع التشفير
+    const passwordData = { password: encryptPassword(newPassword) };
     const passwordBlob = new Blob([JSON.stringify(passwordData, null, 2)], { type: "application/json" });
     
     const result = await put(PASSWORD_BLOB_KEY, passwordBlob, { 

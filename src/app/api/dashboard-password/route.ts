@@ -3,6 +3,21 @@ import { put, list } from '@vercel/blob';
 
 const PASSWORD_BLOB_KEY = "dashboard-password.json";
 
+// دالة تشفير بسيطة لكلمة المرور
+function encryptPassword(password: string): string {
+  // تشفير بسيط - يمكن تحسينه لاحقاً
+  return Buffer.from(password).toString('base64');
+}
+
+// دالة فك التشفير
+function decryptPassword(encrypted: string): string {
+  try {
+    return Buffer.from(encrypted, 'base64').toString('utf-8');
+  } catch {
+    return "israa2025"; // fallback
+  }
+}
+
 // دالة للتحقق من أن الطلب يأتي من نفس الموقع
 function isSameOrigin(req: NextRequest): boolean {
   const origin = req.headers.get('origin');
@@ -75,10 +90,15 @@ export async function GET(req: NextRequest) {
             // التعامل مع كلا الشكلين من كلمة المرور
             let actualPassword = passwordData.password || passwordData.dashboardPassword || "israa2025";
             
+            // فك تشفير كلمة المرور
+            if (actualPassword !== "israa2025") {
+              actualPassword = decryptPassword(actualPassword);
+            }
+            
             // إذا كان الملف يحتوي على dashboardPassword، نحوله إلى password
             if (passwordData.dashboardPassword && !passwordData.password) {
               console.log('Converting dashboardPassword to password format...');
-              const correctedData = { password: passwordData.dashboardPassword };
+              const correctedData = { password: encryptPassword(passwordData.dashboardPassword) };
               const correctedBlob = new Blob([JSON.stringify(correctedData, null, 2)], { type: "application/json" });
               
               try {
@@ -112,7 +132,7 @@ export async function GET(req: NextRequest) {
     } else {
       console.log('Password blob not found, creating default...');
       // إنشاء كلمة المرور الافتراضية
-      const defaultPassword = { password: "israa2025" };
+      const defaultPassword = { password: encryptPassword("israa2025") };
       const passwordBlob = new Blob([JSON.stringify(defaultPassword, null, 2)], { type: "application/json" });
       
       try {
@@ -211,7 +231,8 @@ export async function POST(req: NextRequest) {
     }
     
     // إنشاء كلمة المرور الجديدة
-    const passwordData = { password: body.password };
+    const encryptedPassword = encryptPassword(body.password);
+    const passwordData = { password: encryptedPassword };
     const passwordBlob = new Blob([JSON.stringify(passwordData, null, 2)], { type: "application/json" });
     
     console.log('Saving new password to Vercel Blob Storage...');
