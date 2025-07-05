@@ -135,25 +135,34 @@ export async function fetchSiteSettings() {
 // حفظ إعدادات الموقع على الخادم
 export async function saveSiteSettings(settings: any) {
   console.log('Saving site settings:', settings);
-  const blob = new Blob([JSON.stringify(settings)], { type: "application/json" });
-  const formData = new FormData();
-  formData.append("file", blob, SETTINGS_BLOB_KEY);
-  formData.append("key", SETTINGS_BLOB_KEY);
   
-  const res = await fetch("/api/upload", {
-    method: "POST",
-    body: formData,
-  });
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error('Settings upload failed:', errorText);
-    throw new Error("فشل حفظ إعدادات الموقع: " + errorText);
+  try {
+    const blob = new Blob([JSON.stringify(settings)], { type: "application/json" });
+    const formData = new FormData();
+    formData.append("file", blob, SETTINGS_BLOB_KEY);
+    formData.append("key", SETTINGS_BLOB_KEY);
+    
+    console.log('Uploading settings to /api/upload...');
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+    
+    console.log('Upload response status:', res.status);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Settings upload failed:', errorText);
+      throw new Error("فشل حفظ إعدادات الموقع: " + errorText);
+    }
+    
+    const data = await res.json();
+    console.log('Settings upload successful:', data);
+    return !!data.url;
+  } catch (error) {
+    console.error('Error in saveSiteSettings:', error);
+    throw error;
   }
-  
-  const data = await res.json();
-  console.log('Settings upload successful:', data);
-  return !!data.url;
 }
 
 // الإعدادات الافتراضية

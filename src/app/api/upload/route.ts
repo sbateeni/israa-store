@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   try {
     let putOptions: any = { access: 'public', token };
-    if (key === 'products.json') {
+    if (key === 'products.json' || key === 'site-settings.json') {
       putOptions.allowOverwrite = true;
     }
     const { url } = await put(key, file, putOptions);
