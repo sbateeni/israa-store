@@ -41,7 +41,7 @@ export default function DashboardPage() {
     facebook: "",
     instagram: "",
     snapchat: "",
-    dashboardPassword: "israa2024",
+    dashboardPassword: "",
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -90,7 +90,7 @@ export default function DashboardPage() {
           facebook: "",
           instagram: "",
           snapchat: "",
-          dashboardPassword: "israa2024",
+          dashboardPassword: "",
         });
       }
     };
@@ -373,7 +373,12 @@ export default function DashboardPage() {
               className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="كلمة المرور الجديدة"
             />
-            <p className="text-xs text-gray-500 mt-1">غير كلمة المرور للوصول إلى لوحة التحكم</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {siteSettings.dashboardPassword ? 
+                "كلمة المرور محفوظة على الخادم" : 
+                "أدخل كلمة مرور جديدة (كلمة المرور الافتراضية: israa2024)"
+              }
+            </p>
           </div>
         </div>
         <button

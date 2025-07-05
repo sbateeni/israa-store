@@ -172,7 +172,7 @@ function getDefaultSettings() {
     facebook: "",
     instagram: "",
     snapchat: "",
-    dashboardPassword: "israa2024", // كلمة المرور الافتراضية
+    dashboardPassword: "", // كلمة المرور محفوظة على الخادم فقط
   };
 }
 
@@ -180,6 +180,10 @@ function getDefaultSettings() {
 export async function verifyPassword(password: string) {
   try {
     const settings = await fetchSiteSettings();
+    // إذا لم تكن كلمة المرور محفوظة على الخادم، استخدم كلمة المرور الافتراضية
+    if (!settings.dashboardPassword) {
+      return password === "israa2024";
+    }
     return password === settings.dashboardPassword;
   } catch (error) {
     console.error('Error verifying password:', error);
