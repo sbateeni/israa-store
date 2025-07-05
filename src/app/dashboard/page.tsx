@@ -71,6 +71,7 @@ export default function DashboardPage() {
     const loadSettings = async () => {
       try {
         const settings = await fetchSiteSettings();
+        console.log('Loaded settings from server:', settings);
         
         // استخراج الرقم من رابط واتساب للعرض
         let whatsappDisplay = settings.whatsapp || "";
@@ -78,10 +79,13 @@ export default function DashboardPage() {
           whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
         }
         
-        setSiteSettings({
+        const formattedSettings = {
           ...settings,
           whatsapp: whatsappDisplay
-        });
+        };
+        
+        console.log('Formatted settings for display:', formattedSettings);
+        setSiteSettings(formattedSettings);
       } catch (error) {
         console.error('Error loading settings:', error);
         // في حالة الخطأ، استخدام الإعدادات الافتراضية
@@ -135,11 +139,30 @@ export default function DashboardPage() {
         }
       }
       
+      console.log('Saving settings:', formattedSettings);
+      
       // حفظ الإعدادات على الخادم
       await saveSiteSettings(formattedSettings);
       
-      // تحديث الحالة المحلية
-      setSiteSettings(formattedSettings);
+      // إعادة تحميل الإعدادات من الخادم للتأكد من الحفظ
+      const updatedSettings = await fetchSiteSettings();
+      console.log('Reloaded settings:', updatedSettings);
+      
+      // تنسيق الإعدادات للعرض
+      let whatsappDisplay = updatedSettings.whatsapp || "";
+      if (whatsappDisplay.startsWith('https://wa.me/')) {
+        whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
+      }
+      
+      const formattedUpdatedSettings = {
+        ...updatedSettings,
+        whatsapp: whatsappDisplay
+      };
+      
+      console.log('Formatted updated settings for display:', formattedUpdatedSettings);
+      
+      // تحديث الحالة المحلية بالإعدادات المحدثة
+      setSiteSettings(formattedUpdatedSettings);
       
       setMessage({ type: 'success', text: 'تم حفظ إعدادات الموقع بنجاح' });
       setTimeout(() => setMessage(null), 3000);

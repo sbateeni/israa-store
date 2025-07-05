@@ -122,9 +122,11 @@ export async function deleteProduct(productId: number) {
 // جلب إعدادات الموقع من الخادم
 export async function fetchSiteSettings() {
   try {
-    const res = await fetch("/api/settings");
+    // إضافة timestamp لمنع التخزين المؤقت
+    const res = await fetch("/api/settings?" + new Date().getTime());
     if (!res.ok) return getDefaultSettings();
     const data = await res.json();
+    console.log('Fetched site settings:', data);
     return data || getDefaultSettings();
   } catch (error) {
     console.error('Error fetching site settings:', error);
@@ -137,28 +139,26 @@ export async function saveSiteSettings(settings: any) {
   console.log('Saving site settings:', settings);
   
   try {
-    const blob = new Blob([JSON.stringify(settings)], { type: "application/json" });
-    const formData = new FormData();
-    formData.append("file", blob, SETTINGS_BLOB_KEY);
-    formData.append("key", SETTINGS_BLOB_KEY);
-    
-    console.log('Uploading settings to /api/upload...');
-    const res = await fetch("/api/upload", {
+    console.log('Sending settings to /api/settings...');
+    const res = await fetch("/api/settings", {
       method: "POST",
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(settings),
     });
     
-    console.log('Upload response status:', res.status);
+    console.log('Settings save response status:', res.status);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error('Settings upload failed:', errorText);
+      console.error('Settings save failed:', errorText);
       throw new Error("فشل حفظ إعدادات الموقع: " + errorText);
     }
     
     const data = await res.json();
-    console.log('Settings upload successful:', data);
-    return !!data.url;
+    console.log('Settings save successful:', data);
+    return !!data.success;
   } catch (error) {
     console.error('Error in saveSiteSettings:', error);
     throw error;
