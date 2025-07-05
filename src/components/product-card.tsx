@@ -50,10 +50,10 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
     >
       <CardHeader className="p-0">
         <div className="relative aspect-square w-full">
-          {product.image ? (
+          {product && product.image ? (
             <Image
               src={product.image as string}
-              alt={product.name}
+              alt={product.name || 'Product'}
               data-ai-hint={product.dataAiHint}
               fill
               className="object-cover rounded-t-2xl transition-transform duration-300 group-hover:scale-110 group-hover:brightness-105"
