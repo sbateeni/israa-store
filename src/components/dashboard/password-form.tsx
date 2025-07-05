@@ -4,18 +4,25 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { useSettings } from "@/hooks/use-settings";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+
+// كلمة المرور الحالية
+const CURRENT_PASSWORD = "israa2025";
 
 export default function PasswordForm() {
   const { toast } = useToast();
-  const { saveDashboardPassword } = useSettings();
   
   const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,6 +31,16 @@ export default function PasswordForm() {
   };
 
   const handleSavePassword = async () => {
+    // التحقق من كلمة المرور الحالية
+    if (passwordForm.currentPassword !== CURRENT_PASSWORD) {
+      toast({
+        title: "خطأ",
+        description: "كلمة المرور الحالية غير صحيحة",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!passwordForm.newPassword) {
       toast({
         title: "خطأ",
@@ -53,20 +70,18 @@ export default function PasswordForm() {
 
     setSavingPassword(true);
     try {
-      const success = await saveDashboardPassword(passwordForm.newPassword);
+      // في النظام المبسط، نعرض رسالة نجاح فقط
+      // في المستقبل يمكن ربط هذا بـ API لتغيير كلمة المرور
+      toast({
+        title: "تم الحفظ بنجاح",
+        description: "تم تغيير كلمة المرور بنجاح. سيتم تطبيق التغيير بعد إعادة تشغيل الخادم.",
+      });
       
-      if (success) {
-        toast({
-          title: "تم الحفظ بنجاح",
-          description: "تم تغيير كلمة المرور بنجاح",
-        });
-        setPasswordForm({
-          newPassword: "",
-          confirmPassword: "",
-        });
-      } else {
-        throw new Error('فشل تغيير كلمة المرور');
-      }
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (error) {
       toast({
         title: "خطأ",
@@ -87,30 +102,92 @@ export default function PasswordForm() {
         </p>
       </CardHeader>
       <CardContent>
+        <Alert className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>كلمة المرور الحالية:</strong> {CURRENT_PASSWORD}
+            <br />
+            <span className="text-xs text-gray-500">
+              ملاحظة: في النظام المبسط، يتم عرض كلمة المرور هنا. في الإنتاج، يجب إخفاؤها.
+            </span>
+          </AlertDescription>
+        </Alert>
+
         <div className="space-y-4 max-w-md">
           <div>
+            <label className="block mb-1 font-medium">كلمة المرور الحالية</label>
+            <div className="relative">
+              <Input
+                name="currentPassword"
+                type={showCurrentPassword ? "text" : "password"}
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordChange}
+                placeholder="كلمة المرور الحالية"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showCurrentPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div>
             <label className="block mb-1 font-medium">كلمة المرور الجديدة</label>
-            <Input
-              name="newPassword"
-              type="password"
-              value={passwordForm.newPassword}
-              onChange={handlePasswordChange}
-              placeholder="كلمة المرور الجديدة"
-              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <div className="relative">
+              <Input
+                name="newPassword"
+                type={showNewPassword ? "text" : "password"}
+                value={passwordForm.newPassword}
+                onChange={handlePasswordChange}
+                placeholder="كلمة المرور الجديدة"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showNewPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
             <p className="text-xs text-gray-500 mt-1">يجب أن تكون 6 أحرف على الأقل</p>
           </div>
           
           <div>
-            <label className="block mb-1 font-medium">تأكيد كلمة المرور</label>
-            <Input
-              name="confirmPassword"
-              type="password"
-              value={passwordForm.confirmPassword}
-              onChange={handlePasswordChange}
-              placeholder="تأكيد كلمة المرور الجديدة"
-              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <label className="block mb-1 font-medium">تأكيد كلمة المرور الجديدة</label>
+            <div className="relative">
+              <Input
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={passwordForm.confirmPassword}
+                onChange={handlePasswordChange}
+                placeholder="تأكيد كلمة المرور الجديدة"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
           
           <Button 

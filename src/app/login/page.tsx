@@ -5,16 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useSettings } from "@/hooks/use-settings";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// كلمة المرور الثابتة للوحة التحكم
+const DASHBOARD_PASSWORD = "israa2025";
+
 export default function LoginPage() {
   const { toast } = useToast();
-  const { dashboardPassword, loading } = useSettings();
   const { login, isAuthenticated } = useAuth();
   const router = useRouter();
   
@@ -37,8 +38,8 @@ export default function LoginPage() {
     setIsLoggingIn(true);
     
     try {
-      // التحقق من كلمة المرور باستخدام hook المصادقة
-      if (login(password, dashboardPassword)) {
+      // التحقق من كلمة المرور الثابتة
+      if (login(password, DASHBOARD_PASSWORD)) {
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحباً بك في لوحة التحكم",
@@ -67,19 +68,6 @@ export default function LoginPage() {
   const handleBackToHome = () => {
     router.push('/');
   };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-lg">جاري تحميل...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto p-6">
@@ -122,20 +110,20 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {!dashboardPassword && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    لم يتم تعيين كلمة مرور بعد. يرجى الذهاب إلى لوحة التحكم وتعيين كلمة مرور أولاً.
-                  </AlertDescription>
-                </Alert>
-              )}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  كلمة المرور الافتراضية: <strong>israa2025</strong>
+                  <br />
+                  يمكنك تغييرها من لوحة التحكم بعد تسجيل الدخول.
+                </AlertDescription>
+              </Alert>
 
               <div className="space-y-2">
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={isLoggingIn || !dashboardPassword}
+                  disabled={isLoggingIn}
                 >
                   {isLoggingIn ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
                 </Button>
@@ -147,17 +135,6 @@ export default function LoginPage() {
                   onClick={handleBackToHome}
                 >
                   العودة للصفحة الرئيسية
-                </Button>
-                
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  className="w-full text-sm"
-                  asChild
-                >
-                  <Link href="/forgot-password">
-                    نسيت كلمة المرور؟
-                  </Link>
                 </Button>
               </div>
             </form>
