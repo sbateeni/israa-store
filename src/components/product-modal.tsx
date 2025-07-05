@@ -13,7 +13,7 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import { useCart } from "@/contexts/cart-provider";
 import { useToast } from "@/hooks/use-toast";
-import { Instagram, Facebook } from "lucide-react";
+import { Instagram, Facebook, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useSettings } from "@/hooks/use-settings";
 
@@ -43,6 +43,22 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
   const { toast } = useToast();
   const { formatSocialLink, socialLinks, loading: settingsLoading } = useSettings();
   const [quantity, setQuantity] = useState(1);
+
+  // سلايدر الصور والفيديوهات
+  const media = product?.images && product.images.length > 0
+    ? product.images
+    : product?.image
+      ? [{ url: product.image, isMain: true }]
+      : [];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const goToPrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev - 1 + media.length) % media.length);
+  };
+  const goToNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % media.length);
+  };
 
   // التحقق من صحة المنتج
   if (!product || typeof product !== 'object') {
@@ -122,17 +138,54 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="relative aspect-square">
-            {product.image ? (
-              <Image
-                src={product.image}
-                alt={product.name || 'Product'}
-                fill
-                className="object-cover rounded-lg"
-              />
+            {media.length > 0 ? (
+              media[currentIndex].url.endsWith('.mp4') || media[currentIndex].url.endsWith('.webm') || media[currentIndex].url.endsWith('.ogg') ? (
+                <video
+                  src={media[currentIndex].url}
+                  controls
+                  className="object-cover rounded-lg w-full h-full"
+                />
+              ) : (
+                <Image
+                  src={media[currentIndex].url}
+                  alt={product.name || 'Product'}
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              )
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground rounded-lg">
                 لا توجد صورة
               </div>
+            )}
+            
+            {/* أسهم التنقل */}
+            {media.length > 1 && (
+              <>
+                <button
+                  onClick={goToPrev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-10"
+                  aria-label="السابق"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={goToNext}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-10"
+                  aria-label="التالي"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+                {/* مؤشر الصور */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {media.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`w-3 h-3 rounded-full ${idx === currentIndex ? 'bg-primary' : 'bg-white/60'} border border-primary/30`}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
 

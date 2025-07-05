@@ -37,8 +37,8 @@ interface MultiImageUploadProps {
 export default function MultiImageUpload({
   onImagesChange,
   maxImages = 10,
-  acceptedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-  maxSize = 10
+  acceptedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'],
+  maxSize = 100
 }: MultiImageUploadProps) {
   const { toast } = useToast();
   const [images, setImages] = useState<ImageFile[]>([]);
@@ -123,7 +123,7 @@ export default function MultiImageUpload({
       const imageFile: ImageFile = {
         id: Math.random().toString(36).substring(2, 15),
         file,
-        isMain: images.length === 0 && newImages.length === 0, // أول صورة تكون رئيسية
+        isMain: images.length === 0 && newImages.length === 0, // أول صورة/فيديو تكون رئيسية
         isUploading: true
       };
 
@@ -294,7 +294,7 @@ export default function MultiImageUpload({
                     image.isMain ? 'ring-2 ring-primary' : 'border-gray-200'
                   }`}
                 >
-                  {/* صورة معاينة */}
+                  {/* صورة أو فيديو */}
                   <div className="aspect-square bg-gray-100 flex items-center justify-center">
                     {image.isUploading ? (
                       <div className="text-center">
@@ -307,11 +307,19 @@ export default function MultiImageUpload({
                         <p className="text-xs text-red-500">فشل الرفع</p>
                       </div>
                     ) : image.url ? (
-                      <img
-                        src={image.url}
-                        alt={image.file.name}
-                        className="w-full h-full object-cover"
-                      />
+                      image.file.type.startsWith('video/') ? (
+                        <video
+                          src={image.url}
+                          controls
+                          className="w-full h-full object-cover rounded"
+                        />
+                      ) : (
+                        <img
+                          src={image.url}
+                          alt={image.file.name}
+                          className="w-full h-full object-cover"
+                        />
+                      )
                     ) : (
                       <ImageIcon className="h-8 w-8 text-gray-400" />
                     )}

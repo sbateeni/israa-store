@@ -7,6 +7,8 @@ import { Button } from "./ui/button";
 import { useCart } from "@/contexts/cart-provider";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/hooks/use-settings";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +25,22 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
     console.error('Invalid product:', product);
     return null;
   }
+
+  // سلايدر الصور والفيديوهات
+  const media = product.images && product.images.length > 0
+    ? product.images
+    : product.image
+      ? [{ url: product.image, isMain: true }]
+      : [];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const goToPrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev - 1 + media.length) % media.length);
+  };
+  const goToNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % media.length);
+  };
 
   const handleAddToCart = () => {
     if (!product || !product.name) {
@@ -84,35 +102,54 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
     >
       <CardHeader className="p-0">
         <div className="relative aspect-square w-full">
-          {product && product.images && product.images.length > 0 ? (
-            // عرض الصورة الرئيسية من الصور المتعددة
-            <Image
-              src={product.images.find(img => img.isMain)?.url || product.images[0].url}
-              alt={product.name || 'Product'}
-              data-ai-hint={product.dataAiHint}
-              fill
-              className="object-cover rounded-t-2xl transition-transform duration-300 group-hover:scale-110 group-hover:brightness-105"
-            />
-          ) : product && product.image ? (
-            // عرض الصورة الواحدة (للتوافق مع المنتجات القديمة)
-            <Image
-              src={product.image as string}
-              alt={product.name || 'Product'}
-              data-ai-hint={product.dataAiHint}
-              fill
-              className="object-cover rounded-t-2xl transition-transform duration-300 group-hover:scale-110 group-hover:brightness-105"
-            />
+          {media.length > 0 ? (
+            media[currentIndex].url.endsWith('.mp4') || media[currentIndex].url.endsWith('.webm') || media[currentIndex].url.endsWith('.ogg') ? (
+              <video
+                src={media[currentIndex].url}
+                controls
+                className="object-cover rounded-t-2xl w-full h-full"
+              />
+            ) : (
+              <Image
+                src={media[currentIndex].url}
+                alt={product.name || 'Product'}
+                data-ai-hint={product.dataAiHint}
+                fill
+                className="object-cover rounded-t-2xl transition-transform duration-300 group-hover:scale-110 group-hover:brightness-105"
+              />
+            )
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
               لا توجد صورة
             </div>
           )}
-          
-          {/* مؤشر الصور المتعددة */}
-          {product && product.images && product.images.length > 1 && (
-            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
-              {product.images.length} صور
-            </div>
+          {/* أسهم التنقل */}
+          {media.length > 1 && (
+            <>
+              <button
+                onClick={goToPrev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-1 z-10"
+                aria-label="السابق"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={goToNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-1 z-10"
+                aria-label="التالي"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+              {/* مؤشر الصور */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                {media.map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`w-2 h-2 rounded-full ${idx === currentIndex ? 'bg-primary' : 'bg-white/60'} border border-primary/30`}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </CardHeader>
