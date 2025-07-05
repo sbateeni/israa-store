@@ -17,7 +17,7 @@ export async function GET() {
     if (!res.ok) {
       // إذا لم توجد إعدادات، إرجاع الإعدادات الافتراضية
       return NextResponse.json({
-        whatsapp: "966500000000",
+        whatsapp: "",
         facebook: "",
         instagram: "",
         snapchat: "",
@@ -31,7 +31,7 @@ export async function GET() {
     if (!settingsBlob) {
       // إذا لم توجد إعدادات، إرجاع الإعدادات الافتراضية
       return NextResponse.json({
-        whatsapp: "966500000000",
+        whatsapp: "",
         facebook: "",
         instagram: "",
         snapchat: "",
@@ -51,7 +51,7 @@ export async function GET() {
     console.error("Error fetching settings:", error);
     // في حالة الخطأ، إرجاع الإعدادات الافتراضية
     return NextResponse.json({
-      whatsapp: "966500000000",
+      whatsapp: "",
       facebook: "",
       instagram: "",
       snapchat: "",
@@ -68,15 +68,17 @@ export async function POST(req: NextRequest) {
     }
 
     const settings = await req.json();
+    console.log('Received settings:', settings);
     
     // التحقق من صحة البيانات
     if (!settings || typeof settings !== 'object') {
+      console.error('Invalid settings data:', settings);
       return NextResponse.json({ error: 'Invalid settings data' }, { status: 400 });
     }
     
     // التأكد من وجود الحقول المطلوبة
     const validatedSettings = {
-      whatsapp: settings.whatsapp || "966500000000",
+      whatsapp: settings.whatsapp || "",
       facebook: settings.facebook || "",
       instagram: settings.instagram || "",
       snapchat: settings.snapchat || "",

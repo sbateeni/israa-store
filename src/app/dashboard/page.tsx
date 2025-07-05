@@ -86,7 +86,7 @@ export default function DashboardPage() {
         console.error('Error loading settings:', error);
         // في حالة الخطأ، استخدام الإعدادات الافتراضية
         setSiteSettings({
-          whatsapp: "966500000000",
+          whatsapp: "",
           facebook: "",
           instagram: "",
           snapchat: "",
@@ -134,14 +134,16 @@ export default function DashboardPage() {
         }
       }
       
-      console.log('Saving settings:', formattedSettings);
+      console.log('Original site settings:', siteSettings);
+      console.log('Formatted settings to save:', formattedSettings);
       
       // حفظ الإعدادات على الخادم
-      await saveSiteSettings(formattedSettings);
+      const saveResult = await saveSiteSettings(formattedSettings);
+      console.log('Save result:', saveResult);
       
       // إعادة تحميل الإعدادات من الخادم للتأكد من الحفظ
       const updatedSettings = await fetchSiteSettings();
-      console.log('Reloaded settings:', updatedSettings);
+      console.log('Reloaded settings from server:', updatedSettings);
       
       // تنسيق الإعدادات للعرض
       let whatsappDisplay = updatedSettings.whatsapp || "";

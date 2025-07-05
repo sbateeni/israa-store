@@ -159,6 +159,12 @@ export async function saveSiteSettings(settings: any) {
     
     const data = await res.json();
     console.log('Settings save successful:', data);
+    
+    // التحقق من أن الحفظ تم بنجاح
+    if (!data.success) {
+      throw new Error("فشل حفظ الإعدادات: " + (data.error || 'خطأ غير معروف'));
+    }
+    
     return !!data.success;
   } catch (error) {
     console.error('Error in saveSiteSettings:', error);
@@ -169,7 +175,7 @@ export async function saveSiteSettings(settings: any) {
 // الإعدادات الافتراضية
 function getDefaultSettings() {
   return {
-    whatsapp: "966500000000",
+    whatsapp: "",
     facebook: "",
     instagram: "",
     snapchat: "",
