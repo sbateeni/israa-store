@@ -20,8 +20,8 @@ export async function GET() {
       }, { status: 500 });
     }
     
-    // تعيين كلمة مرور طوارئ بسيطة
-    const emergencyPassword = "israa2025";
+    // تعيين كلمة مرور طوارئ بسيطة - يمكن تغييرها حسب الحاجة
+    const emergencyPassword = "israa2025"; // يمكن تغيير هذه الكلمة
     console.log('Setting emergency password:', emergencyPassword);
     
     // إنشاء كلمة المرور مع التشفير
