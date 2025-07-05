@@ -10,6 +10,10 @@ interface Product {
   price: number;
   image?: string;
   video?: string;
+  whatsapp?: string;
+  facebook?: string;
+  instagram?: string;
+  snapchat?: string;
 }
 
 export default function DashboardPage() {
@@ -22,6 +26,10 @@ export default function DashboardPage() {
     price: "",
     image: undefined as File | undefined,
     video: undefined as File | undefined,
+    whatsapp: "",
+    facebook: "",
+    instagram: "",
+    snapchat: "",
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -70,12 +78,16 @@ export default function DashboardPage() {
         videoUrl = await uploadMedia(form.video);
       }
       const newProduct: Product = {
-        id: editingProduct ? editingProduct.id : Date.now().toString(),
+        id: editingProduct ? editingProduct.id : Date.now(),
         name: form.name,
         description: form.description,
         price: parseFloat(form.price),
         image: imageUrl,
         video: videoUrl,
+        whatsapp: form.whatsapp || undefined,
+        facebook: form.facebook || undefined,
+        instagram: form.instagram || undefined,
+        snapchat: form.snapchat || undefined,
       };
       let newProducts;
       if (editingProduct) {
@@ -86,7 +98,17 @@ export default function DashboardPage() {
       await saveProducts(newProducts);
       setProducts(newProducts);
       setEditingProduct(null);
-      setForm({ name: "", description: "", price: "", image: undefined, video: undefined });
+      setForm({ 
+        name: "", 
+        description: "", 
+        price: "", 
+        image: undefined, 
+        video: undefined,
+        whatsapp: "",
+        facebook: "",
+        instagram: "",
+        snapchat: "",
+      });
       if (imageInputRef.current) imageInputRef.current.value = "";
       if (videoInputRef.current) videoInputRef.current.value = "";
       setMessage({ type: 'success', text: editingProduct ? 'تم تعديل المنتج بنجاح' : 'تم إضافة المنتج بنجاح' });
@@ -104,6 +126,10 @@ export default function DashboardPage() {
       price: product.price.toString(),
       image: undefined,
       video: undefined,
+      whatsapp: product.whatsapp || "",
+      facebook: product.facebook || "",
+      instagram: product.instagram || "",
+      snapchat: product.snapchat || "",
     });
   };
 
@@ -190,6 +216,58 @@ export default function DashboardPage() {
             ref={videoInputRef}
           />
         </div>
+        
+        {/* Social Media Links */}
+        <div className="border-t pt-4">
+          <h3 className="text-lg font-semibold mb-3">روابط التواصل الاجتماعي</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-1 text-green-600">رابط واتساب</label>
+              <input
+                name="whatsapp"
+                type="url"
+                value={form.whatsapp}
+                onChange={handleInputChange}
+                className="border rounded w-full p-2"
+                placeholder="https://wa.me/رقم_الهاتف"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-blue-600">رابط فيسبوك</label>
+              <input
+                name="facebook"
+                type="url"
+                value={form.facebook}
+                onChange={handleInputChange}
+                className="border rounded w-full p-2"
+                placeholder="https://facebook.com/username"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-purple-600">رابط انستغرام</label>
+              <input
+                name="instagram"
+                type="url"
+                value={form.instagram}
+                onChange={handleInputChange}
+                className="border rounded w-full p-2"
+                placeholder="https://instagram.com/username"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-yellow-600">رابط سناب شات</label>
+              <input
+                name="snapchat"
+                type="url"
+                value={form.snapchat}
+                onChange={handleInputChange}
+                className="border rounded w-full p-2"
+                placeholder="https://snapchat.com/add/username"
+              />
+            </div>
+          </div>
+        </div>
+        
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
           {editingProduct ? "تعديل المنتج" : "إضافة منتج"}
         </button>
@@ -199,7 +277,17 @@ export default function DashboardPage() {
             className="ml-2 text-red-600"
             onClick={() => {
               setEditingProduct(null);
-              setForm({ name: "", description: "", price: "", image: undefined, video: undefined });
+              setForm({ 
+                name: "", 
+                description: "", 
+                price: "", 
+                image: undefined, 
+                video: undefined,
+                whatsapp: "",
+                facebook: "",
+                instagram: "",
+                snapchat: "",
+              });
               if (imageInputRef.current) imageInputRef.current.value = "";
               if (videoInputRef.current) videoInputRef.current.value = "";
             }}
@@ -224,6 +312,29 @@ export default function DashboardPage() {
                 {product.video && (
                   <video src={product.video} controls className="w-32 h-32 mt-2" />
                 )}
+                {/* Social Media Links Display */}
+                <div className="flex gap-2 mt-2">
+                  {product.whatsapp && (
+                    <a href={product.whatsapp} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                      واتساب
+                    </a>
+                  )}
+                  {product.facebook && (
+                    <a href={product.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                      فيسبوك
+                    </a>
+                  )}
+                  {product.instagram && (
+                    <a href={product.instagram} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800">
+                      انستغرام
+                    </a>
+                  )}
+                  {product.snapchat && (
+                    <a href={product.snapchat} target="_blank" rel="noopener noreferrer" className="text-yellow-600 hover:text-yellow-800">
+                      سناب شات
+                    </a>
+                  )}
+                </div>
               </div>
               <div className="mt-4 md:mt-0 flex gap-2">
                 <button

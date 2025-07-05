@@ -65,7 +65,8 @@ export async function fetchProducts() {
   const res = await fetch("/api/products");
   if (!res.ok) return [];
   const data = await res.json();
-  return data || [];
+  // إضافة روابط التواصل الاجتماعي الافتراضية للمنتجات
+  return (data || []).map((product: any) => withDefaultSocials(product));
 }
 
 // رفع أو تحديث ملف المنتجات عبر API route

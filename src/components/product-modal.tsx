@@ -106,39 +106,47 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
             <p className="text-2xl font-bold text-primary my-4">{product.price} ₪</p>
             <DialogDescription className="text-base flex-grow">
               {product.description}
-            </DialogDescription>
-            <DialogFooter className="mt-4 sm:justify-between items-center">
-                <div className="flex justify-start items-center gap-2 order-last sm:order-first">
-                    {product.facebook && (
-                        <Button variant="ghost" size="icon" asChild>
-                            <a href={product.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                                <Facebook className="h-5 w-5" />
-                            </a>
-                        </Button>
-                    )}
-                    {product.instagram && (
-                        <Button variant="ghost" size="icon" asChild>
-                            <a href={product.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                                <Instagram className="h-5 w-5" />
-                            </a>
-                        </Button>
-                    )}
-                    {product.snapchat && (
-                        <Button variant="ghost" size="icon" asChild>
-                            <a href={product.snapchat} target="_blank" rel="noopener noreferrer" aria-label="Snapchat">
-                                <SnapchatIcon />
-                            </a>
-                        </Button>
-                    )}
-                    {product.whatsapp && (
-                        <Button variant="ghost" size="icon" asChild>
-                            <a href={product.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                                <WhatsAppIcon />
-                            </a>
-                        </Button>
-                    )}
+              
+              {/* Social Media Icons */}
+                              <div className="mt-4 flex justify-center gap-3">
+                  <button
+                    onClick={() => window.open(product.whatsapp || 'https://wa.me/', '_blank')}
+                    className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-colors duration-200"
+                    title="واتساب"
+                  >
+                    <WhatsAppIcon />
+                  </button>
+                  
+                  <button
+                    onClick={() => window.open(product.facebook || 'https://facebook.com', '_blank')}
+                    className="w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-colors duration-200"
+                    title="فيسبوك"
+                  >
+                    <Facebook className="h-5 w-5 text-white" />
+                  </button>
+                  
+                  <button
+                    onClick={() => window.open(product.instagram || 'https://instagram.com', '_blank')}
+                    className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full flex items-center justify-center transition-colors duration-200"
+                    title="انستغرام"
+                  >
+                    <Instagram className="h-5 w-5 text-white" />
+                  </button>
+                  
+                  <button
+                    onClick={() => window.open(product.snapchat || 'https://snapchat.com', '_blank')}
+                    className="w-10 h-10 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-colors duration-200"
+                    title="سناب شات"
+                  >
+                    <SnapchatIcon />
+                  </button>
                 </div>
-              <Button className="w-full sm:w-auto" onClick={handleAddToCart}>Add to Cart</Button>
+            </DialogDescription>
+            
+
+            
+            <DialogFooter className="mt-4 justify-center">
+              <Button className="w-full sm:w-auto" onClick={handleAddToCart}>أضف للسلة</Button>
             </DialogFooter>
           </div>
         </div>
