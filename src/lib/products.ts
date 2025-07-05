@@ -62,7 +62,7 @@ const MEDIA_PREFIX = "products-media/";
 
 // جلب المنتجات من Blob
 const BLOB_API_URL = "https://api.vercel.com/v2/blob";
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || "vercel_blob_rw_3rYI5trXqmi2Rgmd_40mfx02cgDWi0OdNFlLEf8fa1ZTQXi";
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 export async function fetchProducts() {
   const res = await fetch("/api/products");
   if (!res.ok) return [];

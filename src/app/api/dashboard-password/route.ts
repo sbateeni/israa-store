@@ -53,15 +53,9 @@ export async function GET(req: NextRequest) {
     if (!token) {
       console.error('Missing BLOB_READ_WRITE_TOKEN');
       return NextResponse.json({
-        password: "israa2025", // كلمة المرور الافتراضية
-        message: "Using default password - BLOB_READ_WRITE_TOKEN not configured"
-      }, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
+        error: 'Missing BLOB_READ_WRITE_TOKEN',
+        message: "BLOB_READ_WRITE_TOKEN not configured"
+      }, { status: 500 });
     }
     
     // جلب جميع الملفات من Blob Storage
@@ -88,10 +82,10 @@ export async function GET(req: NextRequest) {
             console.log('Password data loaded from blob:', passwordData);
             
             // التعامل مع كلا الشكلين من كلمة المرور
-            let actualPassword = passwordData.password || passwordData.dashboardPassword || "israa2025";
+            let actualPassword = passwordData.password || passwordData.dashboardPassword || "";
             
             // فك تشفير كلمة المرور
-            if (actualPassword !== "israa2025") {
+            if (actualPassword && actualPassword !== "") {
               actualPassword = decryptPassword(actualPassword);
             }
             
@@ -114,6 +108,13 @@ export async function GET(req: NextRequest) {
               }
             }
             
+            if (!actualPassword) {
+              return NextResponse.json({
+                error: 'No password found in storage',
+                message: "Password not configured"
+              }, { status: 404 });
+            }
+            
             return NextResponse.json({
               password: actualPassword,
               message: "Password loaded from Vercel Blob Storage"
@@ -132,7 +133,7 @@ export async function GET(req: NextRequest) {
     } else {
       console.log('Password blob not found, creating default...');
       // إنشاء كلمة المرور الافتراضية
-      const defaultPassword = { password: encryptPassword("israa2025") };
+      const defaultPassword = { password: encryptPassword("admin123") };
       const passwordBlob = new Blob([JSON.stringify(defaultPassword, null, 2)], { type: "application/json" });
       
       try {
@@ -143,7 +144,7 @@ export async function GET(req: NextRequest) {
         });
         console.log('Default password created in blob storage');
         return NextResponse.json({
-          password: defaultPassword.password,
+          password: "admin123",
           message: "Default password created in Vercel Blob Storage"
         }, {
           headers: {
@@ -155,41 +156,23 @@ export async function GET(req: NextRequest) {
       } catch (error) {
         console.error('Error creating default password:', error);
         return NextResponse.json({
-          password: "israa2025",
-          message: "Using fallback password"
-        }, {
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
+          error: 'Failed to create default password',
+          message: "Error occurred while creating password"
+        }, { status: 500 });
       }
     }
     
     return NextResponse.json({
-      password: "israa2025",
-      message: "Using fallback password"
-    }, {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    });
+      error: 'No password found',
+      message: "Password not configured"
+    }, { status: 404 });
     
   } catch (error) {
     console.error("Error fetching password:", error);
     return NextResponse.json({
-      password: "israa2025",
-      message: "Error occurred, using fallback password"
-    }, {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    });
+      error: 'Error occurred while fetching password',
+      message: "Internal server error"
+    }, { status: 500 });
   }
 }
 
@@ -211,8 +194,9 @@ export async function POST(req: NextRequest) {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
     if (!token) {
       console.error('Missing BLOB_READ_WRITE_TOKEN');
-      return NextResponse.json({ 
-        error: 'Missing BLOB_READ_WRITE_TOKEN' 
+      return NextResponse.json({
+        error: 'Missing BLOB_READ_WRITE_TOKEN',
+        message: "BLOB_READ_WRITE_TOKEN not configured"
       }, { status: 500 });
     }
     

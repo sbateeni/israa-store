@@ -6,7 +6,7 @@ interface PasswordData {
 }
 
 export function useDashboardPassword() {
-  const [password, setPassword] = useState<string>("israa2025"); // كلمة المرور الافتراضية
+  const [password, setPassword] = useState<string>(""); // إزالة كلمة المرور الافتراضية
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
@@ -42,8 +42,8 @@ export function useDashboardPassword() {
     } catch (err) {
       console.error('Error fetching password:', err);
       setError(err instanceof Error ? err.message : 'خطأ في جلب كلمة المرور');
-      // استخدام كلمة المرور الافتراضية في حالة الخطأ
-      setPassword("israa2025");
+      // إزالة كلمة المرور الافتراضية
+      setPassword("");
     } finally {
       setLoading(false);
     }

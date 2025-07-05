@@ -10,7 +10,7 @@ import { Wrench, AlertTriangle } from "lucide-react";
 
 export default function PasswordFix() {
   const { toast } = useToast();
-  const [password, setPassword] = useState("israa2025");
+  const [password, setPassword] = useState("");
   const [fixing, setFixing] = useState(false);
 
   const handleFixPassword = async () => {

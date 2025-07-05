@@ -42,7 +42,13 @@ export async function POST(req: NextRequest) {
     console.log('Current password file content:', currentContent);
     
     const currentData = JSON.parse(currentContent);
-    const currentPassword = currentData.password || currentData.dashboardPassword || "israa2025";
+    const currentPassword = currentData.password || currentData.dashboardPassword || "";
+    
+    if (!currentPassword) {
+      return NextResponse.json({ 
+        error: 'No password found in file' 
+      }, { status: 404 });
+    }
     
     console.log('Current password:', currentPassword);
     

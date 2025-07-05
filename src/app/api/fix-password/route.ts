@@ -21,7 +21,13 @@ export async function POST(req: NextRequest) {
     }
     
     const body = await req.json();
-    const newPassword = body.password || "israa2025";
+    const newPassword = body.password;
+    
+    if (!newPassword) {
+      return NextResponse.json({ 
+        error: 'Password is required' 
+      }, { status: 400 });
+    }
     
     console.log('Fixing password format in Blob Storage...');
     
