@@ -11,10 +11,11 @@ type Testimonial = {
 
 function withDefaultSocials(product: Omit<Product, 'facebook' | 'instagram' | 'snapchat' | 'whatsapp'> & Partial<Pick<Product, 'facebook' | 'instagram' | 'snapchat' | 'whatsapp'>>): Product {
   return {
-    facebook: "https://facebook.com",
-    instagram: "https://instagram.com",
-    snapchat: "https://www.snapchat.com/",
-    whatsapp: "https://wa.me/966500000000", // رقم افتراضي للمثال
+    // لا نضيف روابط افتراضية، بل نتركها فارغة لاستخدام الإعدادات العامة
+    facebook: undefined,
+    instagram: undefined,
+    snapchat: undefined,
+    whatsapp: undefined,
     ...product,
   };
 }
@@ -66,7 +67,7 @@ export async function fetchProducts() {
   const res = await fetch("/api/products");
   if (!res.ok) return [];
   const data = await res.json();
-  // إضافة روابط التواصل الاجتماعي الافتراضية للمنتجات
+  // تنظيف روابط التواصل الاجتماعي للمنتجات لاستخدام الإعدادات العامة
   return (data || []).map((product: any) => withDefaultSocials(product));
 }
 

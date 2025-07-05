@@ -29,10 +29,6 @@ export default function DashboardPage() {
     images: [] as File[],
     videos: [] as File[],
     mainImageIndex: 0,
-    whatsapp: "",
-    facebook: "",
-    instagram: "",
-    snapchat: "",
   });
   
   // إعدادات الموقع العامة
@@ -114,8 +110,7 @@ export default function DashboardPage() {
 
   // دالة مساعدة لتنسيق روابط التواصل الاجتماعي للعرض
   const formatSocialLink = (type: 'whatsapp' | 'facebook' | 'instagram' | 'snapchat', productValue?: string, settingsValue?: string): string | undefined => {
-    if (productValue) return productValue; // إذا كان المنتج له رابط خاص، استخدمه
-    
+    // نستخدم الإعدادات العامة فقط، نتجاهل روابط المنتج الفردية
     if (!settingsValue) return undefined; // إذا لم تكن هناك إعدادات، لا تعرض أيقونة
     
     // تنسيق رابط واتساب
@@ -222,19 +217,7 @@ export default function DashboardPage() {
         }
       }
       
-      // تنسيق روابط التواصل الاجتماعي
-      let whatsappUrl = form.whatsapp || siteSettings.whatsapp;
-      let facebookUrl = form.facebook || siteSettings.facebook;
-      let instagramUrl = form.instagram || siteSettings.instagram;
-      let snapchatUrl = form.snapchat || siteSettings.snapchat;
 
-      // تنسيق رابط واتساب
-      if (whatsappUrl && !whatsappUrl.startsWith('https://wa.me/')) {
-        // إذا كان المستخدم كتب رقم فقط، أضف الرابط الكامل
-        if (whatsappUrl.match(/^\d+$/)) {
-          whatsappUrl = `https://wa.me/${whatsappUrl}`;
-        }
-      }
       
       const newProduct: Product = {
         id: editingProduct ? editingProduct.id : Date.now(),
@@ -245,10 +228,11 @@ export default function DashboardPage() {
         images: imageUrls.length > 0 ? imageUrls : undefined,
         video: videoUrls[0] || undefined,
         videos: videoUrls.length > 0 ? videoUrls : undefined,
-        whatsapp: whatsappUrl || undefined,
-        facebook: facebookUrl || undefined,
-        instagram: instagramUrl || undefined,
-        snapchat: snapchatUrl || undefined,
+        // لا نحفظ روابط التواصل الاجتماعي في المنتج، بل نستخدم الإعدادات العامة
+        whatsapp: undefined,
+        facebook: undefined,
+        instagram: undefined,
+        snapchat: undefined,
       };
       let newProducts;
       if (editingProduct) {
@@ -266,10 +250,6 @@ export default function DashboardPage() {
         images: [],
         videos: [],
         mainImageIndex: 0,
-        whatsapp: "",
-        facebook: "",
-        instagram: "",
-        snapchat: "",
       });
       if (imageInputRef.current) imageInputRef.current.value = "";
       if (videoInputRef.current) videoInputRef.current.value = "";
@@ -283,12 +263,6 @@ export default function DashboardPage() {
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     
-    // استخراج الرقم من رابط واتساب للعرض
-    let whatsappDisplay = product.whatsapp || "";
-    if (whatsappDisplay.startsWith('https://wa.me/')) {
-      whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
-    }
-    
     setForm({
       name: product.name,
       description: product.description,
@@ -296,10 +270,6 @@ export default function DashboardPage() {
       images: [],
       videos: [],
       mainImageIndex: 0,
-      whatsapp: whatsappDisplay,
-      facebook: product.facebook || "",
-      instagram: product.instagram || "",
-      snapchat: product.snapchat || "",
     });
     
     // إظهار رسالة للمستخدم عن الصور والفيديوهات الموجودة
@@ -427,6 +397,11 @@ export default function DashboardPage() {
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4 border p-4 rounded mb-8">
+        <div className="bg-blue-50 p-3 rounded-lg mb-4">
+          <p className="text-sm text-blue-800">
+            <strong>ملاحظة:</strong> روابط التواصل الاجتماعي (واتساب، فيسبوك، انستغرام، سناب شات) ستُستخدم تلقائياً من الإعدادات العامة المحددة أعلاه.
+          </p>
+        </div>
         <div>
           <label className="block mb-1">اسم المنتج</label>
           <input
@@ -546,58 +521,7 @@ export default function DashboardPage() {
           )}
         </div>
         
-        {/* Social Media Links */}
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-3">روابط التواصل الاجتماعي (اختياري)</h3>
-          <p className="text-sm text-gray-600 mb-4">اتركها فارغة لاستخدام الإعدادات العامة، أو اكتب روابط خاصة لهذا المنتج</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1 text-green-600">رابط واتساب</label>
-              <input
-                name="whatsapp"
-                type="url"
-                value={form.whatsapp}
-                onChange={handleInputChange}
-                className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="https://wa.me/966500000000"
-              />
-              <p className="text-xs text-gray-500 mt-1">اكتب الرقم فقط بدون + (مثال: 966500000000)</p>
-            </div>
-            <div>
-              <label className="block mb-1 text-blue-600">رابط فيسبوك</label>
-              <input
-                name="facebook"
-                type="url"
-                value={form.facebook}
-                onChange={handleInputChange}
-                className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="https://facebook.com/username"
-              />
-            </div>
-            <div>
-              <label className="block mb-1 text-purple-600">رابط انستغرام</label>
-              <input
-                name="instagram"
-                type="url"
-                value={form.instagram}
-                onChange={handleInputChange}
-                className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="https://instagram.com/username"
-              />
-            </div>
-            <div>
-              <label className="block mb-1 text-yellow-600">رابط سناب شات</label>
-              <input
-                name="snapchat"
-                type="url"
-                value={form.snapchat}
-                onChange={handleInputChange}
-                className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="https://snapchat.com/add/username"
-              />
-            </div>
-          </div>
-        </div>
+
         
         <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-lg">
           {editingProduct ? "تعديل المنتج" : "إضافة منتج"}
@@ -615,10 +539,6 @@ export default function DashboardPage() {
                 images: [],
                 videos: [],
                 mainImageIndex: 0,
-                whatsapp: "",
-                facebook: "",
-                instagram: "",
-                snapchat: "",
               });
               if (imageInputRef.current) imageInputRef.current.value = "";
               if (videoInputRef.current) videoInputRef.current.value = "";
