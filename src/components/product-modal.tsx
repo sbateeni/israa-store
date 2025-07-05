@@ -34,7 +34,7 @@ const SnapchatIcon = () => (
 );
 
 interface ProductModalProps {
-  product: Product;
+  product: Product | null;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -46,7 +46,6 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
 
   // التحقق من صحة المنتج
   if (!product || typeof product !== 'object') {
-    console.error('Invalid product in modal:', product);
     return null;
   }
 
@@ -97,7 +96,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
   };
 
   return (
-    <Dialog open={true} onOpenChange={onOpenChange}>
+    <Dialog open={!!product} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="relative aspect-square">

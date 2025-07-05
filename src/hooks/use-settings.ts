@@ -214,8 +214,20 @@ export function useSettings() {
     if (!value) return undefined;
     
     // تنسيق رابط واتساب
-    if (type === 'whatsapp' && value && !value.startsWith('http')) {
-      return `https://wa.me/${value}`;
+    if (type === 'whatsapp') {
+      // إذا كان الرابط يحتوي على wa.me فهو محفوظ بالفعل
+      if (value.includes('wa.me')) {
+        return value;
+      }
+      // إذا كان رقم فقط، أضف wa.me
+      if (value.match(/^\d+$/)) {
+        return `https://wa.me/${value}`;
+      }
+      // إذا كان يحتوي على + أو - أو مسافات، نظفه أولاً
+      const cleanNumber = value.replace(/[\s+\-()]/g, '');
+      if (cleanNumber.match(/^\d+$/)) {
+        return `https://wa.me/${cleanNumber}`;
+      }
     }
     
     return value;
