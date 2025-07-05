@@ -142,7 +142,7 @@ export default function UnifiedPasswordManager() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ password: passwordStatus?.currentPassword || "admin123" })
+        body: JSON.stringify({ password: passwordStatus?.currentPassword || "" })
       });
 
       if (response.ok) {

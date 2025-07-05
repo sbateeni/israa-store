@@ -144,35 +144,11 @@ export async function GET(req: NextRequest) {
         console.error('Error reading password blob:', error);
       }
     } else {
-      console.log('Password blob not found, creating default...');
-      // إنشاء كلمة المرور الافتراضية
-      const defaultPassword = { password: encryptPassword("admin123") };
-      const passwordBlob = new Blob([JSON.stringify(defaultPassword, null, 2)], { type: "application/json" });
-      
-      try {
-        await put(PASSWORD_BLOB_KEY, passwordBlob, { 
-          access: 'public', 
-          token,
-          allowOverwrite: true 
-        });
-        console.log('Default password created in blob storage');
-        return NextResponse.json({
-          password: "admin123",
-          message: "Default password created in Vercel Blob Storage"
-        }, {
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-      } catch (error) {
-        console.error('Error creating default password:', error);
-        return NextResponse.json({
-          error: 'Failed to create default password',
-          message: "Error occurred while creating password"
-        }, { status: 500 });
-      }
+      console.log('Password blob not found, returning error...');
+      return NextResponse.json({
+        error: 'No password configured',
+        message: "Please set a password first using the emergency fix or dashboard"
+      }, { status: 404 });
     }
     
     return NextResponse.json({
