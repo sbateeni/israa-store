@@ -44,7 +44,22 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
   const { formatSocialLink } = useSettings();
   const [quantity, setQuantity] = useState(1);
 
+  // التحقق من صحة المنتج
+  if (!product || typeof product !== 'object') {
+    console.error('Invalid product in modal:', product);
+    return null;
+  }
+
   const handleAddToCart = () => {
+    if (!product || !product.name) {
+      toast({
+        title: "خطأ",
+        description: "لا يمكن إضافة منتج غير صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // إضافة المنتج بالكمية المحددة
     for (let i = 0; i < quantity; i++) {
       addItem(product);
@@ -59,6 +74,15 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
   };
 
   const handleSocialClick = (platform: 'whatsapp' | 'facebook' | 'instagram' | 'snapchat') => {
+    if (!product) {
+      toast({
+        title: "خطأ",
+        description: "منتج غير صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const settingsLink = formatSocialLink(platform);
     
     if (settingsLink) {
@@ -77,22 +101,28 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="relative aspect-square">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="object-cover rounded-lg"
-            />
+            {product.image ? (
+              <Image
+                src={product.image}
+                alt={product.name || 'Product'}
+                fill
+                className="object-cover rounded-lg"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground rounded-lg">
+                لا توجد صورة
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col">
             <DialogHeader>
-              <p className="text-sm text-muted-foreground">{product.category}</p>
-              <DialogTitle className="text-2xl font-headline">{product.name}</DialogTitle>
+              <p className="text-sm text-muted-foreground">{product.category || 'غير محدد'}</p>
+              <DialogTitle className="text-2xl font-headline">{product.name || 'منتج غير محدد'}</DialogTitle>
             </DialogHeader>
-            <p className="text-2xl font-bold text-primary my-4">{product.price} ₪</p>
+            <p className="text-2xl font-bold text-primary my-4">{product.price || 'غير محدد'} ₪</p>
             <DialogDescription className="text-base flex-grow">
-              {product.description}
+              {product.description || 'لا يوجد وصف للمنتج'}
               
               {/* Social Media Icons */}
               <div className="mt-4 text-center">
@@ -157,7 +187,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                   </select>
                 </div>
                 <Button onClick={handleAddToCart} className="flex-1">
-                  أضف للسلة - {quantity * product.price} ₪
+                  أضف للسلة - {quantity * (product.price || 0)} ₪
                 </Button>
               </div>
             </DialogFooter>
