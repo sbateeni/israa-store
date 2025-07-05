@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const PASSWORD = "israa2024"; // يمكنك تغييرها لاحقًا
+const PASSWORD = process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD || "israa2024"; // يمكنك تغييرها لاحقًا
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");

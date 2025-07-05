@@ -34,7 +34,7 @@ export default function ProductsSection() {
   }, []);
 
   const categories = useMemo(
-    () => Array.from(new Set(products.map((p) => p.category))),
+    () => Array.from(new Set(products.map((p) => p.category).filter((cat): cat is ProductCategory => Boolean(cat)))),
     [products]
   );
 
@@ -77,9 +77,9 @@ export default function ProductsSection() {
         <div className="text-center py-8">جاري تحميل المنتجات...</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredProducts.map((product) => (
+          {filteredProducts.map((product, index) => (
             <ProductCard 
-                key={product.id || `unknown-${Date.now()}-${Math.random()}`} 
+                key={`product-${index}`} 
                 product={product} 
                 onViewDetails={() => handleProductClick(product)}
             />
