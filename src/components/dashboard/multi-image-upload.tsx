@@ -1,396 +1,266 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Upload, 
-  X, 
-  Star, 
-  StarOff, 
-  Image as ImageIcon,
-  Trash2,
-  CheckCircle,
-  AlertCircle,
-  Loader2
-} from "lucide-react";
-
-interface ImageFile {
-  id: string;
-  file: File;
-  url?: string;
-  isMain: boolean;
-  isUploading: boolean;
-  uploadError?: string;
-}
+import { Upload, X, Star, StarOff, Image as ImageIcon } from "lucide-react";
 
 interface MultiImageUploadProps {
   onImagesChange: (images: { url: string; isMain: boolean }[]) => void;
   maxImages?: number;
-  acceptedTypes?: string[];
-  maxSize?: number; // in MB
+  maxSize?: number; // بالـ MB
 }
 
-export default function MultiImageUpload({
-  onImagesChange,
-  maxImages = 10,
-  acceptedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'],
-  maxSize = 100
+export default function MultiImageUpload({ 
+  onImagesChange, 
+  maxImages = 10, 
+  maxSize = 100 
 }: MultiImageUploadProps) {
   const { toast } = useToast();
-  const [images, setImages] = useState<ImageFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [images, setImages] = useState<{ url: string; isMain: boolean; file?: File }[]>([]);
+  const [uploading, setUploading] = useState(false);
 
-  // تحويل الصور إلى التنسيق المطلوب
-  const updateParentImages = (newImages: ImageFile[]) => {
-    const uploadedImages = newImages
-      .filter(img => img.url && !img.isUploading && !img.uploadError)
-      .map(img => ({
-        url: img.url!,
-        isMain: img.isMain
-      }));
-    onImagesChange(uploadedImages);
-  };
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
 
-  // رفع صورة واحدة
-  const uploadImage = async (imageFile: ImageFile): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', imageFile.file);
-    
-    // إنشاء مفتاح فريد للصورة
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 15);
-    const key = `products/${timestamp}_${randomId}_${imageFile.file.name}`;
-    formData.append('key', key);
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'فشل رفع الصورة');
-    }
-
-    const result = await response.json();
-    return result.url;
-  };
-
-  // إضافة صور جديدة
-  const addImages = async (files: FileList) => {
-    const newImages: ImageFile[] = [];
-    
-    // تحويل FileList إلى Array
     const fileArray = Array.from(files);
     
     // التحقق من عدد الصور
     if (images.length + fileArray.length > maxImages) {
       toast({
         title: "خطأ",
-        description: `يمكن رفع ${maxImages} صور كحد أقصى`,
-        variant: "destructive"
+        description: `يمكنك رفع ${maxImages} صور كحد أقصى`,
+        variant: "destructive",
       });
       return;
     }
 
-    // إنشاء كائنات الصور
-    for (const file of fileArray) {
-      // التحقق من نوع الملف
-      if (!acceptedTypes.includes(file.type)) {
-        toast({
-          title: "خطأ",
-          description: `نوع الملف ${file.name} غير مدعوم`,
-          variant: "destructive"
-        });
-        continue;
-      }
-
-      // التحقق من حجم الملف
-      if (file.size > maxSize * 1024 * 1024) {
-        toast({
-          title: "خطأ",
-          description: `حجم الملف ${file.name} أكبر من ${maxSize}MB`,
-          variant: "destructive"
-        });
-        continue;
-      }
-
-      const imageFile: ImageFile = {
-        id: Math.random().toString(36).substring(2, 15),
-        file,
-        isMain: images.length === 0 && newImages.length === 0, // أول صورة/فيديو تكون رئيسية
-        isUploading: true
-      };
-
-      newImages.push(imageFile);
+    // التحقق من حجم الملفات
+    const oversizedFiles = fileArray.filter(file => file.size > maxSize * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "خطأ",
+        description: `بعض الملفات أكبر من ${maxSize}MB`,
+        variant: "destructive",
+      });
+      return;
     }
 
-    // إضافة الصور الجديدة للقائمة
-    const updatedImages = [...images, ...newImages];
-    setImages(updatedImages);
-
-    // رفع الصور
-    for (const imageFile of newImages) {
-      try {
-        const url = await uploadImage(imageFile);
-        
-        setImages(prev => prev.map(img => 
-          img.id === imageFile.id 
-            ? { ...img, url, isUploading: false }
-            : img
-        ));
-      } catch (error) {
-        console.error('Upload error:', error);
-        setImages(prev => prev.map(img => 
-          img.id === imageFile.id 
-            ? { ...img, isUploading: false, uploadError: error instanceof Error ? error.message : 'فشل الرفع' }
-            : img
-        ));
-      }
-    }
-
-    // تحديث الصور في المكون الأب
-    setTimeout(() => {
-      const currentImages = [...images, ...newImages];
-      updateParentImages(currentImages);
-    }, 100);
-  };
-
-  // حذف صورة
-  const removeImage = (imageId: string) => {
-    const imageToRemove = images.find(img => img.id === imageId);
-    const wasMain = imageToRemove?.isMain;
+    setUploading(true);
     
-    const updatedImages = images.filter(img => img.id !== imageId);
+    try {
+      const newImages = [];
+      
+      for (const file of fileArray) {
+        // رفع الملف إلى Vercel Blob
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`فشل رفع الملف: ${file.name}`);
+        }
+
+        const data = await response.json();
+        
+        newImages.push({
+          url: data.url,
+          isMain: images.length === 0 && newImages.length === 0, // أول صورة كرئيسية
+          file
+        });
+      }
+
+      const updatedImages = [...images, ...newImages];
+      setImages(updatedImages);
+      onImagesChange(updatedImages.map(img => ({ url: img.url, isMain: img.isMain })));
+
+      toast({
+        title: "تم الرفع بنجاح",
+        description: `تم رفع ${fileArray.length} ملف بنجاح`,
+      });
+
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: error instanceof Error ? error.message : "فشل رفع الملفات",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  }, [images, maxImages, maxSize, onImagesChange, toast]);
+
+  const removeImage = (index: number) => {
+    const updatedImages = images.filter((_, i) => i !== index);
     
     // إذا كانت الصورة المحذوفة هي الرئيسية، اجعل أول صورة رئيسية
-    if (wasMain && updatedImages.length > 0) {
+    if (images[index].isMain && updatedImages.length > 0) {
       updatedImages[0].isMain = true;
     }
     
     setImages(updatedImages);
-    updateParentImages(updatedImages);
-    
-    toast({
-      title: "تم الحذف",
-      description: "تم حذف الصورة بنجاح"
-    });
+    onImagesChange(updatedImages.map(img => ({ url: img.url, isMain: img.isMain })));
   };
 
-  // تعيين صورة كرئيسية
-  const setMainImage = (imageId: string) => {
-    const updatedImages = images.map(img => ({
+  const setMainImage = (index: number) => {
+    const updatedImages = images.map((img, i) => ({
       ...img,
-      isMain: img.id === imageId
+      isMain: i === index
     }));
     
     setImages(updatedImages);
-    updateParentImages(updatedImages);
-    
-    toast({
-      title: "تم التحديث",
-      description: "تم تعيين الصورة الرئيسية بنجاح"
-    });
+    onImagesChange(updatedImages.map(img => ({ url: img.url, isMain: img.isMain })));
   };
 
-  // معالجة السحب والإفلات
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+  const addImageFromUrl = () => {
+    const url = prompt("أدخل رابط الصورة:");
+    if (!url) return;
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      addImages(files);
+    if (!url.startsWith('http')) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال رابط صحيح يبدأ بـ http أو https",
+        variant: "destructive",
+      });
+      return;
     }
-  };
 
-  // معالجة النقر على زر الرفع
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      addImages(files);
-    }
-    // إعادة تعيين input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    const newImage = {
+      url,
+      isMain: images.length === 0,
+      file: undefined
+    };
+
+    const updatedImages = [...images, newImage];
+    setImages(updatedImages);
+    onImagesChange(updatedImages.map(img => ({ url: img.url, isMain: img.isMain })));
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ImageIcon className="h-5 w-5" />
-          رفع صور المنتج
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* منطقة رفع الصور */}
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            isDragging 
-              ? 'border-primary bg-primary/5' 
-              : 'border-gray-300 hover:border-primary/50'
-          }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium mb-2">
-            اسحب الصور هنا أو اضغط للاختيار
-          </p>
-          <p className="text-sm text-gray-500 mb-4">
-            يمكنك رفع {maxImages} صور كحد أقصى، حجم كل صورة حتى {maxSize}MB
-          </p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">صور المنتج</h3>
+        <div className="flex gap-2">
           <Button
-            onClick={() => fileInputRef.current?.click()}
+            variant="outline"
+            size="sm"
+            onClick={addImageFromUrl}
             disabled={images.length >= maxImages}
           >
-            <Upload className="h-4 w-4 mr-2" />
-            اختيار الصور
+            <ImageIcon className="w-4 h-4 mr-2" />
+            إضافة من رابط
           </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept={acceptedTypes.join(',')}
-            onChange={handleFileSelect}
-            className="hidden"
-          />
         </div>
+      </div>
 
-        {/* عرض الصور المرفوعة */}
-        {images.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">الصور المرفوعة ({images.length}/{maxImages})</h3>
-              <Badge variant="outline">
-                {images.filter(img => img.isMain).length} صورة رئيسية
-              </Badge>
-            </div>
+      {/* منطقة رفع الملفات */}
+      <Card className="border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+            <p className="text-sm text-gray-600 mb-2">
+              اسحب وأفلت الصور هنا أو اضغط للاختيار
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              الحد الأقصى: {maxImages} صور، {maxSize}MB لكل صورة
+            </p>
+            
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFileSelect}
+              disabled={uploading || images.length >= maxImages}
+              className="hidden"
+              id="multi-image-upload"
+            />
+            
+            <label htmlFor="multi-image-upload">
+              <Button
+                variant="outline"
+                disabled={uploading || images.length >= maxImages}
+                className="cursor-pointer"
+              >
+                {uploading ? "جاري الرفع..." : `اختيار الصور (${images.length}/${maxImages})`}
+              </Button>
+            </label>
+          </div>
+        </CardContent>
+      </Card>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {images.map((image) => (
-                <div
-                  key={image.id}
-                  className={`relative group border rounded-lg overflow-hidden ${
-                    image.isMain ? 'ring-2 ring-primary' : 'border-gray-200'
-                  }`}
-                >
-                  {/* صورة أو فيديو */}
-                  <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                    {image.isUploading ? (
-                      <div className="text-center">
-                        <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-primary" />
-                        <p className="text-xs text-gray-500">جاري الرفع...</p>
-                      </div>
-                    ) : image.uploadError ? (
-                      <div className="text-center p-2">
-                        <AlertCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
-                        <p className="text-xs text-red-500">فشل الرفع</p>
-                      </div>
-                    ) : image.url ? (
-                      image.file.type.startsWith('video/') ? (
-                        <video
-                          src={image.url}
-                          controls
-                          className="w-full h-full object-cover rounded"
-                        />
-                      ) : (
-                        <img
-                          src={image.url}
-                          alt={image.file.name}
-                          className="w-full h-full object-cover"
-                        />
-                      )
-                    ) : (
-                      <ImageIcon className="h-8 w-8 text-gray-400" />
-                    )}
-                  </div>
-
-                  {/* شارة الصورة الرئيسية */}
+      {/* عرض الصور المرفوعة */}
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {images.map((image, index) => (
+            <Card key={index} className="relative group">
+              <CardContent className="p-2">
+                <div className="relative">
+                  <img
+                    src={image.url}
+                    alt={`صورة ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-md"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder-image.jpg';
+                    }}
+                  />
+                  
+                  {/* الصورة الرئيسية */}
                   {image.isMain && (
-                    <div className="absolute top-2 left-2">
-                      <Badge className="bg-primary text-white">
-                        <Star className="h-3 w-3 mr-1" />
-                        رئيسية
-                      </Badge>
-                    </div>
+                    <Badge className="absolute top-2 right-2 bg-yellow-500 text-white">
+                      <Star className="w-3 h-3 mr-1" />
+                      رئيسية
+                    </Badge>
                   )}
-
+                  
                   {/* أزرار التحكم */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    {!image.isMain && !image.isUploading && !image.uploadError && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    {!image.isMain && (
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => setMainImage(image.id)}
-                        className="bg-white text-gray-800 hover:bg-gray-100"
+                        onClick={() => setMainImage(index)}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white"
                       >
-                        <Star className="h-4 w-4 mr-1" />
-                        رئيسية
+                        <Star className="w-3 h-3" />
                       </Button>
                     )}
                     
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => removeImage(image.id)}
-                      className="bg-red-600 hover:bg-red-700"
+                      onClick={() => removeImage(index)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <X className="w-3 h-3" />
                     </Button>
                   </div>
-
-                  {/* اسم الملف */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2">
-                    <p className="text-xs truncate">{image.file.name}</p>
-                    <p className="text-xs text-gray-300">
-                      {(image.file.size / 1024 / 1024).toFixed(1)}MB
-                    </p>
-                  </div>
                 </div>
-              ))}
-            </div>
+                
+                <div className="mt-2 text-center">
+                  <p className="text-xs text-gray-500 truncate">
+                    {image.file ? image.file.name : 'رابط خارجي'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-            {/* رسائل الحالة */}
-            {images.some(img => img.uploadError) && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  بعض الصور فشل رفعها. يمكنك حذفها والمحاولة مرة أخرى.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {images.every(img => img.url && !img.isUploading) && images.length > 0 && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  تم رفع جميع الصور بنجاح! الصورة المميزة باللون الأزرق هي الصورة الرئيسية.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* معلومات إضافية */}
+      {images.length > 0 && (
+        <div className="text-sm text-gray-600">
+          <p>• الصورة الرئيسية ستظهر في قائمة المنتجات</p>
+          <p>• يمكنك تغيير الصورة الرئيسية بالضغط على زر النجمة</p>
+          <p>• يمكنك حذف أي صورة بالضغط على زر X</p>
+        </div>
+      )}
+    </div>
   );
 } 

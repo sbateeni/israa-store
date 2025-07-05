@@ -11,15 +11,29 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { ProductForm, ProductList, SocialLinksForm } from "@/components/dashboard";
 import UnifiedPasswordManager from "@/components/dashboard/unified-password-manager";
+import EditProductModal from "@/components/dashboard/edit-product-modal";
 
 export default function DashboardPage() {
   const { loading, error } = useSettings();
   const { isAuthenticated, isLoading: authLoading, logout, requireAuth } = useAuth();
   const { toast } = useToast();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleProductAdded = () => {
     setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  const handleProductUpdated = () => {
+    setRefreshTrigger(prev => prev + 1);
+    setIsEditModalOpen(false);
+    setEditingProduct(null);
   };
 
   const handleLogout = () => {
@@ -117,7 +131,10 @@ export default function DashboardPage() {
             </Button>
           </div>
           <ProductForm onProductAdded={handleProductAdded} />
-          <ProductList refreshTrigger={refreshTrigger} />
+          <ProductList 
+            refreshTrigger={refreshTrigger} 
+            onEditProduct={handleEditProduct}
+          />
         </TabsContent>
 
         <TabsContent value="social" className="space-y-6">
@@ -166,6 +183,17 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* مودال تعديل المنتج */}
+      <EditProductModal
+        product={editingProduct}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingProduct(null);
+        }}
+        onProductUpdated={handleProductUpdated}
+      />
     </div>
   );
 } 

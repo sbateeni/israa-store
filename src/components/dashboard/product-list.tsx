@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit } from "lucide-react";
 
 interface Product {
   id: string;
@@ -23,9 +23,10 @@ interface Product {
 
 interface ProductListProps {
   refreshTrigger: number;
+  onEditProduct: (product: Product) => void;
 }
 
-export default function ProductList({ refreshTrigger }: ProductListProps) {
+export default function ProductList({ refreshTrigger, onEditProduct }: ProductListProps) {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState<{ [key: string]: number }>({});
@@ -184,13 +185,23 @@ export default function ProductList({ refreshTrigger }: ProductListProps) {
                           </div>
                         )}
                       </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteProduct(product.id)}
-                      >
-                        حذف
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onEditProduct(product)}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          تعديل
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteProduct(product.id)}
+                        >
+                          حذف
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
