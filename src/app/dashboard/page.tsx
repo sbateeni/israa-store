@@ -82,12 +82,12 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8 border-b pb-4">
         <h1 className="text-3xl font-bold">لوحة التحكم</h1>
         <Button 
           onClick={handleLogout}
           variant="outline"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
         >
           <LogOut className="h-4 w-4" />
           تسجيل الخروج
@@ -102,18 +102,68 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="products" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">إدارة المنتجات</h2>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
+            >
+              <LogOut className="h-3 w-3" />
+              تسجيل الخروج
+            </Button>
+          </div>
           <ProductForm onProductAdded={handleProductAdded} />
           <ProductList refreshTrigger={refreshTrigger} />
         </TabsContent>
 
         <TabsContent value="social" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">روابط التواصل</h2>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
+            >
+              <LogOut className="h-3 w-3" />
+              تسجيل الخروج
+            </Button>
+          </div>
           <SocialLinksForm />
         </TabsContent>
 
         <TabsContent value="password" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">كلمة المرور</h2>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
+            >
+              <LogOut className="h-3 w-3" />
+              تسجيل الخروج
+            </Button>
+          </div>
           <PasswordForm />
         </TabsContent>
       </Tabs>
+
+      {/* زر تسجيل الخروج إضافي في الأسفل */}
+      <div className="mt-8 pt-6 border-t">
+        <div className="flex justify-center">
+          <Button 
+            onClick={handleLogout}
+            variant="outline"
+            className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700 hover:text-red-800"
+          >
+            <LogOut className="h-4 w-4" />
+            تسجيل الخروج من لوحة التحكم
+          </Button>
+        </div>
+      </div>
     </div>
   );
 } 
