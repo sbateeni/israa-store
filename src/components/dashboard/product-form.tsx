@@ -133,12 +133,28 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
 
       // إذا تم اختيار ملف، قم برفعه أولاً
       if (selectedFiles.length > 0) {
-        const file = selectedFiles[0]; // نستخدم الملف الأول فقط
-        imageUrl = await uploadAndUseFile(file);
-        toast({
-          title: "تم رفع الملف بنجاح",
-          description: `تم رفع ${file.name} بنجاح`,
-        });
+        try {
+          const file = selectedFiles[0]; // نستخدم الملف الأول فقط
+          imageUrl = await uploadAndUseFile(file);
+          toast({
+            title: "تم رفع الملف بنجاح",
+            description: `تم رفع ${file.name} بنجاح`,
+          });
+        } catch (uploadError) {
+          console.error('Upload failed:', uploadError);
+          
+          // إذا فشل الرفع، اطلب من المستخدم إدخال رابط بديل
+          if (confirm('فشل رفع الملف. هل تريد إدخال رابط صورة بديل؟')) {
+            const fallbackUrl = prompt('أدخل رابط الصورة:');
+            if (fallbackUrl) {
+              imageUrl = fallbackUrl;
+            } else {
+              throw new Error('لم يتم إدخال رابط صورة بديل');
+            }
+          } else {
+            throw uploadError;
+          }
+        }
       }
 
       // إضافة المنتج

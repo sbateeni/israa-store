@@ -4,32 +4,80 @@ import { put } from '@vercel/blob';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  console.log('Upload API called');
+  
   const token = process.env.BLOB_READ_WRITE_TOKEN;
+  console.log('BLOB_READ_WRITE_TOKEN exists:', !!token);
+  console.log('Token length:', token?.length || 0);
+  
   if (!token) {
-    return NextResponse.json({ error: 'Missing BLOB_READ_WRITE_TOKEN' }, { status: 500 });
-  }
-
-  const formData = await req.formData();
-  const file = formData.get('file') as File | null;
-  const key = formData.get('key') as string | null;
-  if (!file || !key) {
-    return NextResponse.json({ error: 'Missing file or key' }, { status: 400 });
+    console.error('Missing BLOB_READ_WRITE_TOKEN');
+    return NextResponse.json({ 
+      error: 'Missing BLOB_READ_WRITE_TOKEN. Please check environment variables.',
+      details: 'The BLOB_READ_WRITE_TOKEN environment variable is not set.'
+    }, { status: 500 });
   }
 
   try {
+    const formData = await req.formData();
+    console.log('FormData parsed successfully');
+    
+    const file = formData.get('file') as File | null;
+    const key = formData.get('key') as string | null;
+    
+    console.log('File received:', {
+      name: file?.name,
+      size: file?.size,
+      type: file?.type,
+      key: key
+    });
+    
+    if (!file || !key) {
+      console.error('Missing file or key:', { file: !!file, key: !!key });
+      return NextResponse.json({ 
+        error: 'Missing file or key',
+        details: `File: ${!!file}, Key: ${!!key}`
+      }, { status: 400 });
+    }
+
+    // Validate file size
+    if (file.size > 10 * 1024 * 1024) {
+      console.error('File too large:', file.size);
+      return NextResponse.json({ 
+        error: 'File size exceeds 10MB limit',
+        details: `File size: ${file.size} bytes`
+      }, { status: 413 });
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+    if (!validTypes.includes(file.type)) {
+      console.error('Invalid file type:', file.type);
+      return NextResponse.json({ 
+        error: 'Invalid file type',
+        details: `File type: ${file.type}, Allowed: ${validTypes.join(', ')}`
+      }, { status: 400 });
+    }
+
     let putOptions: any = { access: 'public', token };
     if (key === 'products.json' || key === 'site-settings.json') {
       putOptions.allowOverwrite = true;
     }
     
     console.log(`Uploading file: ${file.name} (${file.size} bytes) to key: ${key}`);
+    console.log('Put options:', { access: putOptions.access, allowOverwrite: putOptions.allowOverwrite });
     
     const { url } = await put(key, file, putOptions);
     
     console.log(`File uploaded successfully: ${url}`);
     return NextResponse.json({ url });
   } catch (err: any) {
-    console.error('Upload error:', err);
+    console.error('Upload error details:', {
+      message: err.message,
+      stack: err.stack,
+      name: err.name,
+      code: err.code
+    });
     
     // Handle specific Vercel Blob errors
     if (err.message?.includes('rate limit') || err.message?.includes('429')) {
@@ -52,9 +100,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
     }
     
+    // Check for authentication errors
+    if (err.message?.includes('unauthorized') || err.message?.includes('401')) {
+      return NextResponse.json({ 
+        error: 'Authentication failed. Please check your Vercel Blob configuration.',
+        details: 'The BLOB_READ_WRITE_TOKEN may be invalid or expired.'
+      }, { status: 401 });
+    }
+    
+    // Check for network errors
+    if (err.message?.includes('network') || err.message?.includes('fetch')) {
+      return NextResponse.json({ 
+        error: 'Network error. Please check your internet connection and try again.',
+        details: err.message
+      }, { status: 503 });
+    }
+    
     return NextResponse.json({ 
       error: err.message || 'فشل رفع الملف',
-      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      details: process.env.NODE_ENV === 'development' ? err.stack : 'Internal server error',
+      errorType: err.name || 'UnknownError'
     }, { status: 500 });
   }
 } 
