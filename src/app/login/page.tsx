@@ -8,15 +8,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useDashboardPassword } from "@/hooks/use-dashboard-password";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-// كلمة المرور الثابتة للوحة التحكم
-const DASHBOARD_PASSWORD = "israa2025";
 
 export default function LoginPage() {
   const { toast } = useToast();
   const { login, isAuthenticated } = useAuth();
+  const { password: dashboardPassword, loading: passwordLoading, error: passwordError } = useDashboardPassword();
   const router = useRouter();
   
   const [password, setPassword] = useState("");
@@ -38,8 +37,8 @@ export default function LoginPage() {
     setIsLoggingIn(true);
     
     try {
-      // التحقق من كلمة المرور الثابتة
-      if (login(password, DASHBOARD_PASSWORD)) {
+      // التحقق من كلمة المرور من Vercel Blob Storage
+      if (login(password, dashboardPassword)) {
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحباً بك في لوحة التحكم",
@@ -68,6 +67,49 @@ export default function LoginPage() {
   const handleBackToHome = () => {
     router.push('/');
   };
+
+  if (passwordLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-lg">جاري تحميل كلمة المرور...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (passwordError) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold text-red-600">خطأ في التحميل</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {passwordError}
+                  <br />
+                  <Button 
+                    onClick={() => window.location.reload()} 
+                    className="mt-2"
+                    variant="outline"
+                  >
+                    إعادة المحاولة
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -113,9 +155,11 @@ export default function LoginPage() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  كلمة المرور الافتراضية: <strong>israa2025</strong>
+                  كلمة المرور محفوظة في Vercel Blob Storage
                   <br />
-                  يمكنك تغييرها من لوحة التحكم بعد تسجيل الدخول.
+                  <span className="text-xs text-gray-500">
+                    آمنة ومخفية عن GitHub
+                  </span>
                 </AlertDescription>
               </Alert>
 

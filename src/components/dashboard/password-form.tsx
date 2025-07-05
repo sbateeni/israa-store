@@ -6,13 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
-
-// كلمة المرور الحالية
-const CURRENT_PASSWORD = "israa2025";
+import { useDashboardPassword } from "@/hooks/use-dashboard-password";
+import { Eye, EyeOff, AlertCircle, Lock, Shield } from "lucide-react";
 
 export default function PasswordForm() {
   const { toast } = useToast();
+  const { password: currentPassword, loading, error, updatePassword, refreshPassword } = useDashboardPassword();
   
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -32,7 +31,7 @@ export default function PasswordForm() {
 
   const handleSavePassword = async () => {
     // التحقق من كلمة المرور الحالية
-    if (passwordForm.currentPassword !== CURRENT_PASSWORD) {
+    if (passwordForm.currentPassword !== currentPassword) {
       toast({
         title: "خطأ",
         description: "كلمة المرور الحالية غير صحيحة",
@@ -70,18 +69,25 @@ export default function PasswordForm() {
 
     setSavingPassword(true);
     try {
-      // في النظام المبسط، نعرض رسالة نجاح فقط
-      // في المستقبل يمكن ربط هذا بـ API لتغيير كلمة المرور
-      toast({
-        title: "تم الحفظ بنجاح",
-        description: "تم تغيير كلمة المرور بنجاح. سيتم تطبيق التغيير بعد إعادة تشغيل الخادم.",
-      });
+      const success = await updatePassword(passwordForm.newPassword);
       
-      setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      if (success) {
+        toast({
+          title: "تم الحفظ بنجاح",
+          description: "تم تغيير كلمة المرور بنجاح في Vercel Blob Storage",
+        });
+        
+        setPasswordForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        
+        // إعادة تحميل كلمة المرور الجديدة
+        await refreshPassword();
+      } else {
+        throw new Error('فشل تغيير كلمة المرور');
+      }
     } catch (error) {
       toast({
         title: "خطأ",
@@ -93,22 +99,62 @@ export default function PasswordForm() {
     }
   };
 
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-sm text-gray-600">جاري تحميل كلمة المرور...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              خطأ في تحميل كلمة المرور: {error}
+              <br />
+              <Button 
+                onClick={refreshPassword} 
+                className="mt-2"
+                variant="outline"
+                size="sm"
+              >
+                إعادة المحاولة
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>تغيير كلمة مرور لوحة التحكم</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          تغيير كلمة مرور لوحة التحكم
+        </CardTitle>
         <p className="text-sm text-gray-600">
           قم بتغيير كلمة المرور للوصول إلى لوحة التحكم
         </p>
       </CardHeader>
       <CardContent>
         <Alert className="mb-4">
-          <AlertCircle className="h-4 w-4" />
+          <Lock className="h-4 w-4" />
           <AlertDescription>
-            <strong>كلمة المرور الحالية:</strong> {CURRENT_PASSWORD}
+            <strong>كلمة المرور الحالية:</strong> {currentPassword}
             <br />
             <span className="text-xs text-gray-500">
-              ملاحظة: في النظام المبسط، يتم عرض كلمة المرور هنا. في الإنتاج، يجب إخفاؤها.
+              محفوظة في Vercel Blob Storage - آمنة ومخفية عن GitHub
             </span>
           </AlertDescription>
         </Alert>
