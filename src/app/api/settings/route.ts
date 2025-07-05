@@ -20,6 +20,7 @@ export async function GET() {
         facebook: "",
         instagram: "",
         snapchat: "",
+        dashboardPassword: "israa2024",
       });
     }
 
@@ -33,6 +34,7 @@ export async function GET() {
         facebook: "",
         instagram: "",
         snapchat: "",
+        dashboardPassword: "israa2024",
       });
     }
 
@@ -52,6 +54,7 @@ export async function GET() {
       facebook: "",
       instagram: "",
       snapchat: "",
+      dashboardPassword: "israa2024",
     });
   }
 } 

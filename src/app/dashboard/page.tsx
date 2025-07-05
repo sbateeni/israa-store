@@ -41,6 +41,7 @@ export default function DashboardPage() {
     facebook: "",
     instagram: "",
     snapchat: "",
+    dashboardPassword: "israa2024",
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +90,7 @@ export default function DashboardPage() {
           facebook: "",
           instagram: "",
           snapchat: "",
+          dashboardPassword: "israa2024",
         });
       }
     };
@@ -360,6 +362,18 @@ export default function DashboardPage() {
               className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="https://snapchat.com/add/username"
             />
+          </div>
+          <div>
+            <label className="block mb-1 text-red-600 font-medium">كلمة مرور لوحة التحكم</label>
+            <input
+              name="dashboardPassword"
+              type="password"
+              value={siteSettings.dashboardPassword}
+              onChange={handleSettingsChange}
+              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="كلمة المرور الجديدة"
+            />
+            <p className="text-xs text-gray-500 mt-1">غير كلمة المرور للوصول إلى لوحة التحكم</p>
           </div>
         </div>
         <button

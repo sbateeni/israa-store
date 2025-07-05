@@ -172,5 +172,18 @@ function getDefaultSettings() {
     facebook: "",
     instagram: "",
     snapchat: "",
+    dashboardPassword: "israa2024", // كلمة المرور الافتراضية
   };
+}
+
+// التحقق من كلمة المرور
+export async function verifyPassword(password: string) {
+  try {
+    const settings = await fetchSiteSettings();
+    return password === settings.dashboardPassword;
+  } catch (error) {
+    console.error('Error verifying password:', error);
+    // في حالة الخطأ، استخدام كلمة المرور الافتراضية
+    return password === "israa2024";
+  }
 }

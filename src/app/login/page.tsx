@@ -1,21 +1,32 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const PASSWORD = process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD || "israa2024"; // يمكنك تغييرها لاحقًا
+import { verifyPassword } from "@/lib/products";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === PASSWORD) {
-      localStorage.setItem("israa_dashboard_auth", "1");
-      router.push("/dashboard");
-    } else {
-      setError("كلمة المرور غير صحيحة");
+    setLoading(true);
+    setError("");
+    
+    try {
+      const isValid = await verifyPassword(password);
+      if (isValid) {
+        localStorage.setItem("israa_dashboard_auth", "1");
+        router.push("/dashboard");
+      } else {
+        setError("كلمة المرور غير صحيحة");
+      }
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      setError("حدث خطأ في التحقق من كلمة المرور");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,7 +43,13 @@ export default function LoginPage() {
           required
         />
         {error && <div className="text-red-600 text-sm">{error}</div>}
-        <button type="submit" className="bg-blue-600 text-white w-full py-2 rounded">دخول</button>
+        <button 
+          type="submit" 
+          className="bg-blue-600 text-white w-full py-2 rounded disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? "جاري التحقق..." : "دخول"}
+        </button>
       </form>
     </div>
   );
