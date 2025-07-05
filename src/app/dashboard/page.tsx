@@ -1,19 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, LogOut } from "lucide-react";
 import { useSettings } from "@/hooks/use-settings";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { ProductForm, ProductList, SocialLinksForm, PasswordForm } from "@/components/dashboard";
 
 export default function DashboardPage() {
   const { loading, error } = useSettings();
+  const { isAuthenticated, isLoading: authLoading, logout, requireAuth } = useAuth();
+  const { toast } = useToast();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleProductAdded = () => {
     setRefreshTrigger(prev => prev + 1);
   };
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "تم تسجيل الخروج",
+      description: "تم تسجيل الخروج بنجاح",
+    });
+  };
+
+  // التحقق من المصادقة عند تحميل الصفحة
+  useEffect(() => {
+    if (!authLoading) {
+      requireAuth();
+    }
+  }, [authLoading, requireAuth]);
+
+  // عرض شاشة التحميل أثناء التحقق من المصادقة
+  if (authLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-lg">جاري التحقق من المصادقة...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // إذا لم يكن المستخدم مسجل دخول، لا تعرض المحتوى
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -43,7 +82,17 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8 text-center">لوحة التحكم</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">لوحة التحكم</h1>
+        <Button 
+          onClick={handleLogout}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          تسجيل الخروج
+        </Button>
+      </div>
 
       <Tabs defaultValue="products" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">

@@ -26,9 +26,13 @@ export function useSettings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hasLoaded = useRef(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     const fetchSettings = async () => {
+      // Reset loading state for new requests
+      setLoading(true);
+      
       // Prevent multiple simultaneous requests
       if (settingsPromise) {
         try {
@@ -50,8 +54,8 @@ export function useSettings() {
         }
       }
 
-      // Use cached data if available
-      if (settingsCache && !hasLoaded.current) {
+      // Use cached data if available and not refreshing
+      if (settingsCache && !hasLoaded.current && refreshTrigger === 0) {
         setSocialLinks({
           whatsapp: settingsCache.whatsapp || "",
           facebook: settingsCache.facebook || "",
@@ -92,26 +96,25 @@ export function useSettings() {
         
         const data = await settingsPromise;
         
-        if (!hasLoaded.current) {
-          setSocialLinks({
+        // Always update state when data is fetched
+        setSocialLinks({
+          whatsapp: data.whatsapp || "",
+          facebook: data.facebook || "",
+          instagram: data.instagram || "",
+          snapchat: data.snapchat || "",
+        });
+        setDashboardPassword(data.dashboardPassword || "");
+        hasLoaded.current = true;
+        
+        console.log('Settings state updated:', {
+          socialLinks: {
             whatsapp: data.whatsapp || "",
             facebook: data.facebook || "",
             instagram: data.instagram || "",
             snapchat: data.snapchat || "",
-          });
-          setDashboardPassword(data.dashboardPassword || "");
-          hasLoaded.current = true;
-          
-          console.log('Settings state updated:', {
-            socialLinks: {
-              whatsapp: data.whatsapp || "",
-              facebook: data.facebook || "",
-              instagram: data.instagram || "",
-              snapchat: data.snapchat || "",
-            },
-            dashboardPassword: data.dashboardPassword || ""
-          });
-        }
+          },
+          dashboardPassword: data.dashboardPassword || ""
+        });
       } catch (err) {
         console.error('Error fetching settings:', err);
         setError(err instanceof Error ? err.message : 'خطأ غير معروف');
@@ -122,7 +125,7 @@ export function useSettings() {
     };
 
     fetchSettings();
-  }, []);
+  }, [refreshTrigger]);
 
   // تحديث روابط التواصل فقط
   const saveSocialLinks = async (links: SocialLinks) => {
@@ -153,6 +156,8 @@ export function useSettings() {
         // Update cache
         settingsCache = { ...settingsCache, ...links };
         console.log('Social links updated in state:', links);
+        // Trigger refresh to ensure all components get updated data
+        setRefreshTrigger(prev => prev + 1);
         return true;
       } else {
         throw new Error(result.error || 'فشل حفظ روابط التواصل');
@@ -195,6 +200,8 @@ export function useSettings() {
         // Update cache
         settingsCache = { ...settingsCache, dashboardPassword: password };
         console.log('Password updated in state');
+        // Trigger refresh to ensure all components get updated data
+        setRefreshTrigger(prev => prev + 1);
         return true;
       } else {
         throw new Error(result.error || 'فشل حفظ كلمة المرور');
@@ -233,6 +240,16 @@ export function useSettings() {
     return value;
   };
 
+  // دالة لإعادة تحميل البيانات
+  const refreshSettings = () => {
+    console.log('Refreshing settings...');
+    hasLoaded.current = false;
+    settingsCache = null;
+    settingsPromise = null;
+    setLoading(true);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return {
     socialLinks,
     dashboardPassword,
@@ -241,5 +258,6 @@ export function useSettings() {
     formatSocialLink,
     saveSocialLinks,
     saveDashboardPassword,
+    refreshSettings,
   };
 } 

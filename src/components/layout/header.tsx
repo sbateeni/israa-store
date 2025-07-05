@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/locale-provider";
 import Logo from "../icons/logo";
-import { Globe, Menu, Moon, Sun, X } from "lucide-react";
+import { Globe, Menu, Moon, Sun, X, Settings } from "lucide-react";
 import { useTheme } from "@/contexts/theme-provider";
 import CartIcon from "../cart/cart-icon";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -58,6 +58,12 @@ export default function Header() {
               </Link>
               <div className="flex flex-col space-y-2">
                 <NavItems />
+                <Button variant="ghost" asChild className="justify-start">
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Settings className="h-4 w-4 ml-2" />
+                    لوحة التحكم
+                  </Link>
+                </Button>
               </div>
             </SheetContent>
           </Sheet>
@@ -73,6 +79,13 @@ export default function Header() {
           </nav>
           <div className="flex items-center gap-2">
             <CartIcon />
+            
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/login" title="لوحة التحكم">
+                <Settings className="h-5 w-5" />
+              </Link>
+            </Button>
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">

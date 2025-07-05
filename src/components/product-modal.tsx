@@ -41,7 +41,7 @@ interface ProductModalProps {
 export default function ProductModal({ product, onOpenChange }: ProductModalProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
-  const { formatSocialLink, socialLinks, loading } = useSettings();
+  const { formatSocialLink, socialLinks, loading: settingsLoading } = useSettings();
   const [quantity, setQuantity] = useState(1);
 
   // التحقق من صحة المنتج
@@ -51,7 +51,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
 
   // Debug logging
   console.log('ProductModal - socialLinks:', socialLinks);
-  console.log('ProductModal - loading:', loading);
+  console.log('ProductModal - settingsLoading:', settingsLoading);
   console.log('ProductModal - formatSocialLink whatsapp:', formatSocialLink('whatsapp'));
 
   const handleAddToCart = () => {
@@ -82,6 +82,16 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
       toast({
         title: "خطأ",
         description: "منتج غير صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // التحقق من أن الإعدادات تم تحميلها
+    if (settingsLoading) {
+      toast({
+        title: "جاري التحميل",
+        description: "يرجى الانتظار حتى يتم تحميل الإعدادات",
         variant: "destructive",
       });
       return;
@@ -143,37 +153,50 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                   </p>
                 </div>
                 <div className="flex justify-center gap-3">
-                  <button
-                    onClick={() => handleSocialClick('whatsapp')}
-                    className="w-12 h-12 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
-                    title="واتساب"
-                  >
-                    <WhatsAppIcon />
-                  </button>
-                  
-                  <button
-                    onClick={() => handleSocialClick('facebook')}
-                    className="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
-                    title="فيسبوك"
-                  >
-                    <Facebook className="h-5 w-5 text-white" />
-                  </button>
-                  
-                  <button
-                    onClick={() => handleSocialClick('instagram')}
-                    className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
-                    title="انستغرام"
-                  >
-                    <Instagram className="h-5 w-5 text-white" />
-                  </button>
-                  
-                  <button
-                    onClick={() => handleSocialClick('snapchat')}
-                    className="w-12 h-12 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
-                    title="سناب شات"
-                  >
-                    <SnapchatIcon />
-                  </button>
+                  {settingsLoading ? (
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <span className="text-sm text-gray-600">جاري تحميل روابط التواصل...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleSocialClick('whatsapp')}
+                        className="w-12 h-12 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
+                        title="واتساب"
+                        disabled={settingsLoading}
+                      >
+                        <WhatsAppIcon />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleSocialClick('facebook')}
+                        className="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
+                        title="فيسبوك"
+                        disabled={settingsLoading}
+                      >
+                        <Facebook className="h-5 w-5 text-white" />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleSocialClick('instagram')}
+                        className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
+                        title="انستغرام"
+                        disabled={settingsLoading}
+                      >
+                        <Instagram className="h-5 w-5 text-white" />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleSocialClick('snapchat')}
+                        className="w-12 h-12 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
+                        title="سناب شات"
+                        disabled={settingsLoading}
+                      >
+                        <SnapchatIcon />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </DialogDescription>

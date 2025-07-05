@@ -28,6 +28,7 @@ export default function ProductsSection() {
   // Debug logging for settings
   console.log('ProductsSection - socialLinks:', socialLinks);
   console.log('ProductsSection - settingsLoading:', settingsLoading);
+  console.log('ProductsSection - whatsapp link:', socialLinks.whatsapp);
 
   useEffect(() => {
     (async () => {
@@ -113,7 +114,10 @@ export default function ProductsSection() {
         ))}
       </div>
       )}
-      <ProductModal product={selectedProduct} onOpenChange={(isOpen) => !isOpen && setSelectedProduct(null)}/>
+      <ProductModal 
+        product={selectedProduct} 
+        onOpenChange={(isOpen) => !isOpen && setSelectedProduct(null)}
+      />
     </section>
   );
 }
