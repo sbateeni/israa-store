@@ -5,10 +5,11 @@ import { join } from 'path';
 
 const BLOB_API_URL = "https://api.vercel.com/v2/blob";
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || "vercel_blob_rw_3rYI5trXqmi2Rgmd_40mfx02cgDWi0OdNFlLEf8fa1ZTQXi";
-const SETTINGS_BLOB_KEY = "site-settings.json";
+const SOCIAL_BLOB_KEY = "social-links.json";
+const PASSWORD_BLOB_KEY = "dashboard-password.json";
 
-// مسار ملف الإعدادات المحلي
-const LOCAL_SETTINGS_PATH = join(process.cwd(), 'data', 'site-settings.json');
+const LOCAL_SOCIAL_PATH = join(process.cwd(), 'data', 'social-links.json');
+const LOCAL_PASSWORD_PATH = join(process.cwd(), 'data', 'dashboard-password.json');
 
 // دالة للتحقق من وجود الملف المحلي
 async function localFileExists(path: string): Promise<boolean> {
@@ -21,15 +22,15 @@ async function localFileExists(path: string): Promise<boolean> {
 }
 
 // دالة لحفظ الإعدادات محلياً
-async function saveSettingsLocally(settings: any): Promise<void> {
+async function saveLocally(path: string, data: any): Promise<void> {
   try {
     // إنشاء مجلد data إذا لم يكن موجوداً
     const { mkdir } = await import('fs/promises');
     await mkdir(join(process.cwd(), 'data'), { recursive: true });
     
     // حفظ الإعدادات
-    await writeFile(LOCAL_SETTINGS_PATH, JSON.stringify(settings, null, 2));
-    console.log('Settings saved locally to:', LOCAL_SETTINGS_PATH);
+    await writeFile(path, JSON.stringify(data, null, 2));
+    console.log('Settings saved locally to:', path);
   } catch (error) {
     console.error('Error saving settings locally:', error);
     throw error;
@@ -37,10 +38,10 @@ async function saveSettingsLocally(settings: any): Promise<void> {
 }
 
 // دالة لجلب الإعدادات محلياً
-async function loadSettingsLocally(): Promise<any> {
+async function loadLocally(path: string): Promise<any> {
   try {
-    if (await localFileExists(LOCAL_SETTINGS_PATH)) {
-      const data = await readFile(LOCAL_SETTINGS_PATH, 'utf-8');
+    if (await localFileExists(path)) {
+      const data = await readFile(path, 'utf-8');
       const settings = JSON.parse(data);
       console.log('Settings loaded locally:', settings);
       return settings;
@@ -59,76 +60,34 @@ export async function GET() {
     // في البيئة المحلية، استخدم التخزين المحلي
     if (process.env.NODE_ENV === 'development') {
       console.log('Using local storage in development');
-      const localSettings = await loadSettingsLocally();
-      
-      if (localSettings) {
-        console.log('Retrieved local settings:', localSettings);
-        return NextResponse.json(localSettings);
-      }
-      
-      // إذا لم توجد إعدادات محلية، إرجاع الإعدادات الافتراضية
-      console.log('No local settings found, returning defaults');
-      return NextResponse.json({
+      const social = await loadLocally(LOCAL_SOCIAL_PATH) || {
         whatsapp: "",
         facebook: "",
         instagram: "",
-        snapchat: "",
-        dashboardPassword: "",
-      });
+        snapchat: ""
+      };
+      const password = await loadLocally(LOCAL_PASSWORD_PATH) || { dashboardPassword: "" };
+      return NextResponse.json({ ...social, ...password });
     }
     
     // في الإنتاج، استخدم Vercel Blob Storage
     console.log('Using Vercel Blob Storage in production');
     
     // محاولة جلب الإعدادات من Blob Storage
-    const res = await fetch(`${BLOB_API_URL}/list?prefix=${SETTINGS_BLOB_KEY}`, {
-      headers: {
-        Authorization: `Bearer ${BLOB_TOKEN}`,
-      },
-    });
+    const [socialRes, passRes] = await Promise.all([
+      fetch(`${BLOB_API_URL}/get?pathname=${SOCIAL_BLOB_KEY}`, { headers: { Authorization: `Bearer ${BLOB_TOKEN}` } }),
+      fetch(`${BLOB_API_URL}/get?pathname=${PASSWORD_BLOB_KEY}`, { headers: { Authorization: `Bearer ${BLOB_TOKEN}` } })
+    ]);
 
-    console.log('Blob list response status:', res.status);
+    console.log('Blob list response status:', socialRes.status, passRes.status);
 
-    if (!res.ok) {
-      console.log('Blob list failed, returning default settings');
-      return NextResponse.json({
-        whatsapp: "",
-        facebook: "",
-        instagram: "",
-        snapchat: "",
-        dashboardPassword: "",
-      });
-    }
+    let social = { whatsapp: "", facebook: "", instagram: "", snapchat: "" };
+    let password = { dashboardPassword: "" };
 
-    const data = await res.json();
-    console.log('Blob list data:', data);
-    
-    const settingsBlob = data.blobs?.find((blob: any) => blob.pathname === SETTINGS_BLOB_KEY);
-    console.log('Settings blob found:', !!settingsBlob);
+    if (socialRes.ok) social = await socialRes.json();
+    if (passRes.ok) password = await passRes.json();
 
-    if (!settingsBlob) {
-      console.log('No settings blob found, returning default settings');
-      return NextResponse.json({
-        whatsapp: "",
-        facebook: "",
-        instagram: "",
-        snapchat: "",
-        dashboardPassword: "",
-      });
-    }
-
-    // جلب محتوى ملف الإعدادات
-    console.log('Fetching settings content from:', settingsBlob.url);
-    const settingsRes = await fetch(settingsBlob.url);
-    
-    if (!settingsRes.ok) {
-      console.error('Failed to fetch settings content:', settingsRes.status);
-      throw new Error("فشل جلب الإعدادات");
-    }
-
-    const settings = await settingsRes.json();
-    console.log('Retrieved settings:', settings);
-    return NextResponse.json(settings);
+    return NextResponse.json({ ...social, ...password });
   } catch (error) {
     console.error("Error fetching settings:", error);
     return NextResponse.json({
@@ -143,30 +102,29 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const settings = await req.json();
-    console.log('Received settings:', settings);
+    const body = await req.json();
+    const social = {
+      whatsapp: body.whatsapp || "",
+      facebook: body.facebook || "",
+      instagram: body.instagram || "",
+      snapchat: body.snapchat || ""
+    };
+    const password = { dashboardPassword: body.dashboardPassword || "" };
+    console.log('Received settings:', { social, password });
     
     // التحقق من صحة البيانات
-    if (!settings || typeof settings !== 'object') {
-      console.error('Invalid settings data:', settings);
+    if (!social || !password) {
+      console.error('Invalid settings data:', { social, password });
       return NextResponse.json({ error: 'Invalid settings data' }, { status: 400 });
     }
     
-    // التأكد من وجود الحقول المطلوبة
-    const validatedSettings = {
-      whatsapp: settings.whatsapp || "",
-      facebook: settings.facebook || "",
-      instagram: settings.instagram || "",
-      snapchat: settings.snapchat || "",
-      dashboardPassword: settings.dashboardPassword || "",
-    };
-    
-    console.log('Saving validated settings:', validatedSettings);
+    console.log('Saving validated settings:', { social, password });
     
     // في البيئة المحلية، استخدم التخزين المحلي
     if (process.env.NODE_ENV === 'development') {
       console.log('Saving settings locally in development');
-      await saveSettingsLocally(validatedSettings);
+      await saveLocally(LOCAL_SOCIAL_PATH, social);
+      await saveLocally(LOCAL_PASSWORD_PATH, password);
       
       return NextResponse.json({ 
         success: true, 
@@ -177,32 +135,29 @@ export async function POST(req: NextRequest) {
     // في الإنتاج، استخدم Vercel Blob Storage
     console.log('Saving settings to Vercel Blob Storage in production');
     
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
-    console.log('BLOB_TOKEN available:', !!token);
-    
-    if (!token) {
-      console.error('Missing BLOB_READ_WRITE_TOKEN');
-      return NextResponse.json({ error: 'Missing BLOB_READ_WRITE_TOKEN' }, { status: 500 });
-    }
-    
-    // إنشاء Blob من البيانات
-    const blob = new Blob([JSON.stringify(validatedSettings)], { type: "application/json" });
-    console.log('Blob size:', blob.size, 'bytes');
+    // إنشاء Blobs من البيانات
+    const socialBlob = new Blob([JSON.stringify(social)], { type: "application/json" });
+    const passBlob = new Blob([JSON.stringify(password)], { type: "application/json" });
+    console.log('Blob sizes:', socialBlob.size, passBlob.size, 'bytes');
     
     // حفظ الإعدادات في Vercel Blob Storage
     console.log('Attempting to save to Vercel Blob Storage...');
-    const { url } = await put(SETTINGS_BLOB_KEY, blob, { 
+    await put(SOCIAL_BLOB_KEY, socialBlob, { 
       access: 'public', 
-      token,
+      token: BLOB_TOKEN,
+      allowOverwrite: true 
+    });
+    await put(PASSWORD_BLOB_KEY, passBlob, { 
+      access: 'public', 
+      token: BLOB_TOKEN,
       allowOverwrite: true 
     });
     
-    console.log('Settings saved successfully to:', url);
+    console.log('Settings saved successfully to Vercel Blob Storage');
     
     return NextResponse.json({ 
       success: true, 
-      url,
-      message: 'Settings saved successfully' 
+      message: 'Settings saved successfully to Vercel Blob Storage' 
     });
   } catch (error: any) {
     console.error('Error saving settings:', error);

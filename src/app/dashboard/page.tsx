@@ -1,17 +1,23 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { fetchProducts, saveProducts, uploadMedia, deleteProduct, fetchSiteSettings, saveSiteSettings } from "@/lib/products";
-import { useRouter } from "next/navigation";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useSettings } from "@/hooks/use-settings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;
-  image?: string;
-  images?: string[];
-  video?: string;
-  videos?: string[];
+  image: string;
+  category: string;
   whatsapp?: string;
   facebook?: string;
   instagram?: string;
@@ -19,637 +25,523 @@ interface Product {
 }
 
 export default function DashboardPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { toast } = useToast();
+  const { 
+    socialLinks, 
+    dashboardPassword, 
+    loading, 
+    error, 
+    saveSocialLinks, 
+    saveDashboardPassword 
+  } = useSettings();
+  
   const [form, setForm] = useState({
     name: "",
     description: "",
     price: "",
-    images: [] as File[],
-    videos: [] as File[],
-    mainImageIndex: 0,
+    category: "",
+    image: "",
   });
-  
-  // إعدادات الموقع العامة
-  const [siteSettings, setSiteSettings] = useState({
+
+  const [socialForm, setSocialForm] = useState({
     whatsapp: "",
     facebook: "",
     instagram: "",
     snapchat: "",
-    dashboardPassword: "",
   });
+
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [savingSocial, setSavingSocial] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [savingSettings, setSavingSettings] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
 
+  // تحميل المنتجات
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const auth = localStorage.getItem("israa_dashboard_auth");
-      if (auth !== "1") {
-        router.replace("/login");
-      }
-    }
-  }, [router]);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const prods = await fetchProducts();
-      setProducts(prods);
-      setLoading(false);
-    })();
-  }, []);
-
-  // تحميل إعدادات الموقع من الخادم
-  useEffect(() => {
-    const loadSettings = async () => {
+    const loadProducts = async () => {
       try {
-        console.log('Loading settings from server...');
-        const settings = await fetchSiteSettings();
-        console.log('Loaded settings from server:', settings);
-        
-        // استخراج الرقم من رابط واتساب للعرض
-        let whatsappDisplay = settings.whatsapp || "";
-        if (whatsappDisplay.startsWith('https://wa.me/')) {
-          whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
-        }
-        
-        const formattedSettings = {
-          ...settings,
-          whatsapp: whatsappDisplay
-        };
-        
-        console.log('Formatted settings for display:', formattedSettings);
-        setSiteSettings(formattedSettings);
-        setSettingsLoaded(true);
-        
-        // التحقق من أن الإعدادات تم تحميلها بشكل صحيح
-        if (settings.whatsapp || settings.facebook || settings.instagram || settings.snapchat || settings.dashboardPassword) {
-          console.log('✅ Settings loaded successfully with data');
-        } else {
-          console.log('⚠️ Settings loaded but appear to be empty');
+        const response = await fetch('/api/products');
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data);
         }
       } catch (error) {
-        console.error('Error loading settings:', error);
-        // في حالة الخطأ، استخدام الإعدادات الافتراضية
-        setSiteSettings({
-          whatsapp: "",
-          facebook: "",
-          instagram: "",
-          snapchat: "",
-          dashboardPassword: "",
-        });
+        console.error('Error loading products:', error);
       }
     };
-    
-    loadSettings();
+    loadProducts();
   }, []);
+
+  // تحميل إعدادات التواصل الاجتماعي
+  useEffect(() => {
+    if (!loading && socialLinks) {
+      setSocialForm({
+        whatsapp: socialLinks.whatsapp || "",
+        facebook: socialLinks.facebook || "",
+        instagram: socialLinks.instagram || "",
+        snapchat: socialLinks.snapchat || "",
+      });
+      setSettingsLoaded(true);
+    }
+  }, [loading, socialLinks]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSocialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setSiteSettings((prev) => ({ ...prev, [name]: value }));
+    setSocialForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // دالة مساعدة لتنسيق روابط التواصل الاجتماعي للعرض
-  const formatSocialLink = (type: 'whatsapp' | 'facebook' | 'instagram' | 'snapchat', productValue?: string, settingsValue?: string): string | undefined => {
-    // نستخدم الإعدادات العامة فقط، نتجاهل روابط المنتج الفردية
-    if (!settingsValue) return undefined; // إذا لم تكن هناك إعدادات، لا تعرض أيقونة
-    
-    // تنسيق رابط واتساب
-    if (type === 'whatsapp' && settingsValue && !settingsValue.startsWith('http')) {
-      return `https://wa.me/${settingsValue}`;
-    }
-    
-    return settingsValue;
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveSettings = async () => {
-    setSavingSettings(true);
-    try {
-      // تنسيق روابط التواصل الاجتماعي قبل الحفظ
-      let formattedSettings = { ...siteSettings };
-      
-      // تنسيق رابط واتساب
-      if (formattedSettings.whatsapp && !formattedSettings.whatsapp.startsWith('https://wa.me/')) {
-        // إذا كان المستخدم كتب رقم فقط، أضف الرابط الكامل
-        if (formattedSettings.whatsapp.match(/^\d+$/)) {
-          formattedSettings.whatsapp = `https://wa.me/${formattedSettings.whatsapp}`;
-        }
-      }
-      
-      console.log('Original site settings:', siteSettings);
-      console.log('Formatted settings to save:', formattedSettings);
-      
-      // حفظ الإعدادات على الخادم
-      const saveResult = await saveSiteSettings(formattedSettings);
-      console.log('Save result:', saveResult);
-      
-      if (!saveResult) {
-        throw new Error('فشل حفظ الإعدادات');
-      }
-      
-      // انتظار قليلاً للتأكد من حفظ البيانات
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // إعادة تحميل الإعدادات من الخادم للتأكد من الحفظ
-      const updatedSettings = await fetchSiteSettings();
-      console.log('Reloaded settings from server:', updatedSettings);
-      
-      // تنسيق الإعدادات للعرض
-      let whatsappDisplay = updatedSettings.whatsapp || "";
-      if (whatsappDisplay.startsWith('https://wa.me/')) {
-        whatsappDisplay = whatsappDisplay.replace('https://wa.me/', '');
-      }
-      
-      const formattedUpdatedSettings = {
-        ...updatedSettings,
-        whatsapp: whatsappDisplay
-      };
-      
-      console.log('Formatted updated settings for display:', formattedUpdatedSettings);
-      
-      // تحديث الحالة المحلية بالإعدادات المحدثة
-      setSiteSettings(formattedUpdatedSettings);
-      
-      setMessage({ type: 'success', text: 'تم حفظ إعدادات الموقع بنجاح' });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (error: any) {
-      console.error('Error saving settings:', error);
-      setMessage({ type: 'error', text: 'فشل حفظ إعدادات الموقع: ' + (error.message || 'خطأ غير معروف') });
-      setTimeout(() => setMessage(null), 5000);
-    } finally {
-      setSavingSettings(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, files } = e.target;
-    if (files && files.length > 0) {
-      const fileArray = Array.from(files);
-      setForm((prev) => ({ ...prev, [name]: fileArray }));
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setForm(prev => {
-      const newImages = prev.images.filter((_, i) => i !== index);
-      const newMainIndex = prev.mainImageIndex >= newImages.length ? 0 : prev.mainImageIndex;
-      return {
-        ...prev,
-        images: newImages,
-        mainImageIndex: newMainIndex
-      };
-    });
-  };
-
-  const removeVideo = (index: number) => {
-    setForm(prev => ({
-      ...prev,
-      videos: prev.videos.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      let imageUrls: string[] = [];
-      let videoUrls: string[] = [];
-      
-      // رفع الصور
-      if (form.images.length > 0) {
-        for (const image of form.images) {
-          const url = await uploadMedia(image);
-          imageUrls.push(url);
-        }
-      }
-      
-      // رفع الفيديوهات
-      if (form.videos.length > 0) {
-        for (const video of form.videos) {
-          const url = await uploadMedia(video);
-          videoUrls.push(url);
-        }
-      }
-      
-
-      
-      const newProduct: Product = {
-        id: editingProduct ? editingProduct.id : Date.now(),
-        name: form.name,
-        description: form.description,
-        price: parseFloat(form.price),
-        image: imageUrls[form.mainImageIndex] || imageUrls[0] || undefined,
-        images: imageUrls.length > 0 ? imageUrls : undefined,
-        video: videoUrls[0] || undefined,
-        videos: videoUrls.length > 0 ? videoUrls : undefined,
-        // لا نحفظ روابط التواصل الاجتماعي في المنتج، بل نستخدم الإعدادات العامة
-        whatsapp: undefined,
-        facebook: undefined,
-        instagram: undefined,
-        snapchat: undefined,
-      };
-      let newProducts;
-      if (editingProduct) {
-        newProducts = products.map((p) => (p.id === editingProduct.id ? newProduct : p));
-      } else {
-        newProducts = [...products, newProduct];
-      }
-      await saveProducts(newProducts);
-      setProducts(newProducts);
-      setEditingProduct(null);
-      setForm({ 
-        name: "", 
-        description: "", 
-        price: "", 
-        images: [],
-        videos: [],
-        mainImageIndex: 0,
+  const handleSaveProduct = async () => {
+    if (!form.name || !form.description || !form.price || !form.category || !form.image) {
+      toast({
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول المطلوبة",
+        variant: "destructive",
       });
-      if (imageInputRef.current) imageInputRef.current.value = "";
-      if (videoInputRef.current) videoInputRef.current.value = "";
-      setMessage({ type: 'success', text: editingProduct ? 'تم تعديل المنتج بنجاح' : 'تم إضافة المنتج بنجاح' });
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'حدث خطأ أثناء حفظ المنتج' });
+      return;
     }
-    setTimeout(() => setMessage(null), 4000);
-  };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    
-    setForm({
-      name: product.name,
-      description: product.description,
-      price: product.price.toString(),
-      images: [],
-      videos: [],
-      mainImageIndex: 0,
-    });
-    
-    // إظهار رسالة للمستخدم عن الصور والفيديوهات الموجودة
-    let message = "";
-    if (product.images && product.images.length > 1) {
-      message += `المنتج يحتوي على ${product.images.length} صور. `;
-    }
-    if (product.videos && product.videos.length > 1) {
-      message += `المنتج يحتوي على ${product.videos.length} فيديوهات. `;
-    }
-    if (message) {
-      setMessage({ type: 'success', text: message + 'يمكنك إضافة صور وفيديوهات جديدة أو الاحتفاظ بالحالية.' });
-      setTimeout(() => setMessage(null), 5000);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    setLoading(true);
+    setSavingProduct(true);
     try {
-      const newProducts = await deleteProduct(id);
-      setProducts(newProducts);
-      setMessage({ type: 'success', text: 'تم حذف المنتج بنجاح' });
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'حدث خطأ أثناء حذف المنتج' });
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...form,
+          price: parseFloat(form.price),
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "تم الحفظ بنجاح",
+          description: "تم إضافة المنتج بنجاح",
+        });
+        setForm({
+          name: "",
+          description: "",
+          price: "",
+          category: "",
+          image: "",
+        });
+        
+        // إعادة تحميل المنتجات
+        const productsResponse = await fetch('/api/products');
+        if (productsResponse.ok) {
+          const data = await productsResponse.json();
+          setProducts(data);
+        }
+      } else {
+        throw new Error('فشل حفظ المنتج');
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل حفظ المنتج",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingProduct(false);
     }
-    setLoading(false);
-    if (editingProduct?.id === id) setEditingProduct(null);
-    setTimeout(() => setMessage(null), 4000);
   };
+
+  const handleSaveSocialLinks = async () => {
+    setSavingSocial(true);
+    try {
+      // تنسيق رابط واتساب
+      let formattedSocial = { ...socialForm };
+      if (formattedSocial.whatsapp && !formattedSocial.whatsapp.startsWith('https://wa.me/')) {
+        if (formattedSocial.whatsapp.match(/^\d+$/)) {
+          formattedSocial.whatsapp = `https://wa.me/${formattedSocial.whatsapp}`;
+        }
+      }
+
+      const success = await saveSocialLinks(formattedSocial);
+      
+      if (success) {
+        toast({
+          title: "تم الحفظ بنجاح",
+          description: "تم حفظ روابط التواصل الاجتماعي بنجاح",
+        });
+        setSocialForm(formattedSocial);
+      } else {
+        throw new Error('فشل حفظ روابط التواصل');
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل حفظ روابط التواصل الاجتماعي",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingSocial(false);
+    }
+  };
+
+  const handleSavePassword = async () => {
+    if (!passwordForm.newPassword) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال كلمة المرور الجديدة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "خطأ",
+        description: "كلمة المرور الجديدة وتأكيدها غير متطابقين",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      toast({
+        title: "خطأ",
+        description: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const success = await saveDashboardPassword(passwordForm.newPassword);
+      
+      if (success) {
+        toast({
+          title: "تم الحفظ بنجاح",
+          description: "تم تغيير كلمة المرور بنجاح",
+        });
+        setPasswordForm({
+          newPassword: "",
+          confirmPassword: "",
+        });
+      } else {
+        throw new Error('فشل تغيير كلمة المرور');
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل تغيير كلمة المرور",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/products?id=${productId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast({
+          title: "تم الحذف بنجاح",
+          description: "تم حذف المنتج بنجاح",
+        });
+        
+        // إعادة تحميل المنتجات
+        const productsResponse = await fetch('/api/products');
+        if (productsResponse.ok) {
+          const data = await productsResponse.json();
+          setProducts(data);
+        }
+      } else {
+        throw new Error('فشل حذف المنتج');
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل حذف المنتج",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-lg">جاري تحميل الإعدادات...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            خطأ في تحميل الإعدادات: {error}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
-      {message && (
-        <div className={`mb-4 p-4 rounded-lg text-center font-medium shadow-lg ${message.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-          {message.text}
-        </div>
-      )}
-      <h1 className="text-2xl font-bold mb-4">لوحة تحكم المنتجات</h1>
-      <div className="flex justify-between items-center mb-4">
-        <button
-          className="text-sm text-blue-600 underline"
-          onClick={() => {
-            localStorage.removeItem("israa_dashboard_auth");
-            router.push("/login");
-          }}
-        >
-          تسجيل الخروج
-        </button>
-      </div>
-      
-      {/* إعدادات الموقع العامة */}
-      <div className="border p-4 rounded mb-6 bg-gray-50">
-        <h2 className="text-lg font-semibold mb-3 text-gray-800">إعدادات الموقع العامة</h2>
-        <p className="text-sm text-gray-600 mb-4">هذه الروابط ستُستخدم تلقائياً في جميع المنتجات الجديدة</p>
-        {!settingsLoaded && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">جاري تحميل الإعدادات...</p>
-          </div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 text-green-600 font-medium">رابط واتساب الافتراضي</label>
-            <input
-              name="whatsapp"
-              type="url"
-              value={siteSettings.whatsapp}
-              onChange={handleSettingsChange}
-              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="https://wa.me/966500000000"
-            />
-            <p className="text-xs text-gray-500 mt-1">اكتب الرقم فقط بدون + (مثال: 966500000000)</p>
-          </div>
-          <div>
-            <label className="block mb-1 text-blue-600 font-medium">رابط فيسبوك الافتراضي</label>
-            <input
-              name="facebook"
-              type="url"
-              value={siteSettings.facebook}
-              onChange={handleSettingsChange}
-              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="https://facebook.com/username"
-            />
-          </div>
-          <div>
-            <label className="block mb-1 text-purple-600 font-medium">رابط انستغرام الافتراضي</label>
-            <input
-              name="instagram"
-              type="url"
-              value={siteSettings.instagram}
-              onChange={handleSettingsChange}
-              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="https://instagram.com/username"
-            />
-          </div>
-          <div>
-            <label className="block mb-1 text-yellow-600 font-medium">رابط سناب شات الافتراضي</label>
-            <input
-              name="snapchat"
-              type="url"
-              value={siteSettings.snapchat}
-              onChange={handleSettingsChange}
-              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="https://snapchat.com/add/username"
-            />
-          </div>
-          <div>
-            <label className="block mb-1 text-red-600 font-medium">كلمة مرور لوحة التحكم</label>
-            <input
-              name="dashboardPassword"
-              type="password"
-              value={siteSettings.dashboardPassword}
-              onChange={handleSettingsChange}
-              className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="كلمة المرور الجديدة"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {siteSettings.dashboardPassword ? 
-                "كلمة المرور محفوظة على الخادم" : 
-                "أدخل كلمة مرور جديدة (كلمة المرور الافتراضية: israa2024)"
-              }
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={handleSaveSettings}
-          disabled={savingSettings}
-          className={`mt-4 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md ${
-            savingSettings 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-green-600 hover:bg-green-700'
-          } text-white`}
-        >
-          {savingSettings ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
-        </button>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-4 border p-4 rounded mb-8">
-        <div className="bg-blue-50 p-3 rounded-lg mb-4">
-          <p className="text-sm text-blue-800">
-            <strong>ملاحظة:</strong> روابط التواصل الاجتماعي (واتساب، فيسبوك، انستغرام، سناب شات) ستُستخدم تلقائياً من الإعدادات العامة المحددة أعلاه.
-          </p>
-        </div>
-        <div>
-          <label className="block mb-1">اسم المنتج</label>
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleInputChange}
-            className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">وصف المنتج</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleInputChange}
-            className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">السعر</label>
-          <input
-            name="price"
-            type="number"
-            value={form.price}
-            onChange={handleInputChange}
-            className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">صور المنتج (يمكن اختيار عدة صور)</label>
-          <p className="text-sm text-gray-600 mb-2">انقر على الصورة لاختيارها كصورة رئيسية، أو اضغط × لحذفها</p>
-          {form.images.length > 0 && (
-            <p className="text-sm text-blue-600 mb-2">تم اختيار {form.images.length} صورة</p>
-          )}
-          <input
-            name="images"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFileChange}
-            ref={imageInputRef}
-            className="border rounded w-full p-2 bg-white text-gray-900"
-          />
-          {form.images.length > 0 && (
-            <div className="mt-3">
-              <label className="block mb-2 text-sm font-medium">اختر الصورة الرئيسية:</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {form.images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={URL.createObjectURL(image)}
-                      alt={`صورة ${index + 1}`}
-                      className={`w-full h-24 object-cover rounded border-2 cursor-pointer transition-all ${
-                        form.mainImageIndex === index ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300'
-                      }`}
-                      onClick={() => setForm(prev => ({ ...prev, mainImageIndex: index }))}
-                    />
-                    {form.mainImageIndex === index && (
-                      <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
-                        رئيسية
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 left-1 bg-red-500 text-white text-xs px-1 py-0.5 rounded hover:bg-red-600"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <div>
-          <label className="block mb-1">فيديوهات المنتج (يمكن اختيار عدة فيديوهات)</label>
-          <p className="text-sm text-gray-600 mb-2">اضغط "حذف" لإزالة أي فيديو من القائمة</p>
-          {form.videos.length > 0 && (
-            <p className="text-sm text-green-600 mb-2">تم اختيار {form.videos.length} فيديو</p>
-          )}
-          <input
-            name="videos"
-            type="file"
-            accept="video/*"
-            multiple
-            onChange={handleFileChange}
-            ref={videoInputRef}
-            className="border rounded w-full p-2 bg-white text-gray-900"
-          />
-          {form.videos.length > 0 && (
-            <div className="mt-3">
-              <label className="block mb-2 text-sm font-medium">الفيديوهات المختارة:</label>
-              <div className="space-y-2">
-                {form.videos.map((video, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                    <video
-                      src={URL.createObjectURL(video)}
-                      className="w-16 h-12 object-cover rounded"
-                      muted
-                    />
-                    <span className="text-sm text-gray-700 flex-1">{video.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeVideo(index)}
-                      className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600"
-                    >
-                      حذف
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-8 text-center">لوحة التحكم</h1>
 
-        
-        <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-lg">
-          {editingProduct ? "تعديل المنتج" : "إضافة منتج"}
-        </button>
-        {editingProduct && (
-          <button
-            type="button"
-            className="ml-2 text-red-600"
-            onClick={() => {
-              setEditingProduct(null);
-              setForm({ 
-                name: "", 
-                description: "", 
-                price: "", 
-                images: [],
-                videos: [],
-                mainImageIndex: 0,
-              });
-              if (imageInputRef.current) imageInputRef.current.value = "";
-              if (videoInputRef.current) videoInputRef.current.value = "";
-            }}
-          >
-            إلغاء التعديل
-          </button>
-        )}
-      </form>
-      <div>
-        <h2 className="text-xl font-semibold mb-2">قائمة المنتجات</h2>
-        {loading ? <p>جاري التحميل...</p> : products.length === 0 && <p>لا يوجد منتجات بعد.</p>}
-        <ul className="space-y-4">
-          {products.map((product) => (
-            <li key={product.id} className="border p-4 rounded flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <h3 className="font-bold">{product.name}</h3>
-                <p>{product.description}</p>
-                <p className="text-sm text-gray-600">السعر: {product.price} ريال</p>
-                {product.image && (
-                  <div className="mt-2">
-                    <img src={product.image} alt={product.name} className="w-32 h-32 object-cover rounded" />
-                    {product.images && product.images.length > 1 && (
-                      <p className="text-xs text-gray-500 mt-1">+ {product.images.length - 1} صور إضافية</p>
-                    )}
-                  </div>
-                )}
-                {product.video && (
-                  <div className="mt-2">
-                    <video src={product.video} controls className="w-32 h-32 rounded" />
-                    {product.videos && product.videos.length > 1 && (
-                      <p className="text-xs text-gray-500 mt-1">+ {product.videos.length - 1} فيديوهات إضافية</p>
-                    )}
-                  </div>
-                )}
-                {/* Social Media Links Display */}
-                <div className="flex gap-2 mt-2">
-                  {formatSocialLink('whatsapp', product.whatsapp, siteSettings.whatsapp) && (
-                    <a href={formatSocialLink('whatsapp', product.whatsapp, siteSettings.whatsapp)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
-                      واتساب
-                    </a>
-                  )}
-                  {formatSocialLink('facebook', product.facebook, siteSettings.facebook) && (
-                    <a href={formatSocialLink('facebook', product.facebook, siteSettings.facebook)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                      فيسبوك
-                    </a>
-                  )}
-                  {formatSocialLink('instagram', product.instagram, siteSettings.instagram) && (
-                    <a href={formatSocialLink('instagram', product.instagram, siteSettings.instagram)} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800">
-                      انستغرام
-                    </a>
-                  )}
-                  {formatSocialLink('snapchat', product.snapchat, siteSettings.snapchat) && (
-                    <a href={formatSocialLink('snapchat', product.snapchat, siteSettings.snapchat)} target="_blank" rel="noopener noreferrer" className="text-yellow-600 hover:text-yellow-800">
-                      سناب شات
-                    </a>
-                  )}
+      <Tabs defaultValue="products" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="products">إدارة المنتجات</TabsTrigger>
+          <TabsTrigger value="social">روابط التواصل</TabsTrigger>
+          <TabsTrigger value="password">كلمة المرور</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="products" className="space-y-6">
+          {/* إضافة منتج جديد */}
+          <Card>
+            <CardHeader>
+              <CardTitle>إضافة منتج جديد</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1 font-medium">اسم المنتج</label>
+                  <Input
+                    name="name"
+                    value={form.name}
+                    onChange={handleInputChange}
+                    placeholder="اسم المنتج"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">الفئة</label>
+                  <Input
+                    name="category"
+                    value={form.category}
+                    onChange={handleInputChange}
+                    placeholder="فئة المنتج"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">السعر (₪)</label>
+                  <Input
+                    name="price"
+                    type="number"
+                    value={form.price}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">رابط الصورة</label>
+                  <Input
+                    name="image"
+                    value={form.image}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block mb-1 font-medium">وصف المنتج</label>
+                  <Textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleInputChange}
+                    placeholder="وصف المنتج..."
+                    rows={3}
+                  />
                 </div>
               </div>
-              <div className="mt-4 md:mt-0 flex gap-2">
-                <button
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md"
-                  onClick={() => handleEdit(product)}
-                >
-                  تعديل
-                </button>
-                <button
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md"
-                  onClick={() => handleDelete(product.id)}
-                >
-                  حذف
-                </button>
+              <Button 
+                onClick={handleSaveProduct} 
+                disabled={savingProduct}
+                className="mt-4"
+              >
+                {savingProduct ? "جاري الحفظ..." : "إضافة المنتج"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* قائمة المنتجات */}
+          <Card>
+            <CardHeader>
+              <CardTitle>المنتجات الحالية ({products.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {products.map((product) => (
+                  <div key={product.id} className="border p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold">{product.name}</h3>
+                        <p className="text-sm text-gray-600">{product.category}</p>
+                        <p className="text-lg font-bold text-primary">{product.price} ₪</p>
+                        <p className="text-sm text-gray-700 mt-2">{product.description}</p>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteProduct(product.id)}
+                      >
+                        حذف
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {products.length === 0 && (
+                  <p className="text-center text-gray-500">لا توجد منتجات حالياً</p>
+                )}
               </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="social" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>روابط التواصل الاجتماعي</CardTitle>
+              <p className="text-sm text-gray-600">
+                هذه الروابط ستُستخدم تلقائياً في جميع المنتجات
+              </p>
+            </CardHeader>
+            <CardContent>
+              {!settingsLoaded && (
+                <Alert className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>جاري تحميل الإعدادات...</AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1 text-green-600 font-medium">رقم واتساب</label>
+                  <Input
+                    name="whatsapp"
+                    type="text"
+                    value={socialForm.whatsapp}
+                    onChange={handleSocialChange}
+                    className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="966500000000"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">اكتب الرقم فقط بدون + (مثال: 966500000000)</p>
+                </div>
+                <div>
+                  <label className="block mb-1 text-blue-600 font-medium">رابط فيسبوك</label>
+                  <Input
+                    name="facebook"
+                    type="url"
+                    value={socialForm.facebook}
+                    onChange={handleSocialChange}
+                    className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="https://facebook.com/username"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-purple-600 font-medium">رابط انستغرام</label>
+                  <Input
+                    name="instagram"
+                    type="url"
+                    value={socialForm.instagram}
+                    onChange={handleSocialChange}
+                    className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="https://instagram.com/username"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-yellow-600 font-medium">رابط سناب شات</label>
+                  <Input
+                    name="snapchat"
+                    type="url"
+                    value={socialForm.snapchat}
+                    onChange={handleSocialChange}
+                    className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="https://snapchat.com/add/username"
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleSaveSocialLinks} 
+                disabled={savingSocial || !settingsLoaded}
+                className="mt-6"
+              >
+                {savingSocial ? "جاري الحفظ..." : "حفظ روابط التواصل"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="password" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>تغيير كلمة مرور لوحة التحكم</CardTitle>
+              <p className="text-sm text-gray-600">
+                قم بتغيير كلمة المرور للوصول إلى لوحة التحكم
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4 max-w-md">
+                <div>
+                  <label className="block mb-1 font-medium">كلمة المرور الجديدة</label>
+                  <Input
+                    name="newPassword"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={handlePasswordChange}
+                    placeholder="كلمة المرور الجديدة"
+                    className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">يجب أن تكون 6 أحرف على الأقل</p>
+                </div>
+                
+                <div>
+                  <label className="block mb-1 font-medium">تأكيد كلمة المرور</label>
+                  <Input
+                    name="confirmPassword"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={handlePasswordChange}
+                    placeholder="تأكيد كلمة المرور الجديدة"
+                    className="border rounded w-full p-2 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleSavePassword} 
+                  disabled={savingPassword}
+                  className="w-full"
+                >
+                  {savingPassword ? "جاري الحفظ..." : "تغيير كلمة المرور"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 } 
- 
