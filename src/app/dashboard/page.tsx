@@ -43,9 +43,8 @@ export default function DashboardPage() {
     image: "",
   });
 
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const [socialForm, setSocialForm] = useState({
     whatsapp: "",
@@ -65,26 +64,14 @@ export default function DashboardPage() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  // تحميل المنتجات والملفات
+  // تحميل المنتجات
   useEffect(() => {
     const loadData = async () => {
       try {
-        // تحميل المنتجات
         const productsResponse = await fetch('/api/products');
         if (productsResponse.ok) {
           const productsData = await productsResponse.json();
           setProducts(productsData);
-        }
-
-        // تحميل الملفات المحفوظة (من localStorage)
-        const savedFiles = localStorage.getItem('uploadedFiles');
-        if (savedFiles) {
-          try {
-            const files = JSON.parse(savedFiles);
-            setUploadedFiles(files);
-          } catch (error) {
-            console.error('Error parsing saved files:', error);
-          }
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -127,107 +114,49 @@ export default function DashboardPage() {
     setSelectedFiles(files);
   };
 
-  // رفع الملفات
-  const handleUploadFiles = async () => {
-    if (selectedFiles.length === 0) {
+  // رفع ملف واحد واستخدامه كصورة للمنتج
+  const uploadAndUseFile = async (file: File): Promise<string> => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+    if (!validTypes.includes(file.type)) {
+      throw new Error(`نوع الملف ${file.name} غير مدعوم`);
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error(`حجم الملف ${file.name} كبير جداً (الحد الأقصى 10MB)`);
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('key', `products-media/${Date.now()}-${file.name}`);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`فشل رفع ${file.name}`);
+    }
+
+    const data = await response.json();
+    return data.url;
+  };
+
+  const handleSaveProduct = async () => {
+    if (!form.name || !form.description || !form.price || !form.category) {
       toast({
         title: "خطأ",
-        description: "يرجى اختيار ملفات للرفع",
+        description: "يرجى ملء جميع الحقول المطلوبة (اسم المنتج، الوصف، السعر، الفئة)",
         variant: "destructive",
       });
       return;
     }
 
-    setUploading(true);
-    const uploadedUrls: string[] = [];
-
-    try {
-      for (const file of selectedFiles) {
-        // التحقق من نوع الملف
-        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
-        if (!validTypes.includes(file.type)) {
-          toast({
-            title: "خطأ",
-            description: `نوع الملف ${file.name} غير مدعوم`,
-            variant: "destructive",
-          });
-          continue;
-        }
-
-        // التحقق من حجم الملف (10MB كحد أقصى)
-        if (file.size > 10 * 1024 * 1024) {
-          toast({
-            title: "خطأ",
-            description: `حجم الملف ${file.name} كبير جداً (الحد الأقصى 10MB)`,
-            variant: "destructive",
-          });
-          continue;
-        }
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('key', `products-media/${Date.now()}-${file.name}`);
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          uploadedUrls.push(data.url);
-          toast({
-            title: "تم الرفع بنجاح",
-            description: `تم رفع ${file.name} بنجاح`,
-          });
-        } else {
-          throw new Error(`فشل رفع ${file.name}`);
-        }
-      }
-
-      const newFiles = [...uploadedFiles, ...uploadedUrls];
-      setUploadedFiles(newFiles);
-      localStorage.setItem('uploadedFiles', JSON.stringify(newFiles));
-      setSelectedFiles([]);
-      
-      if (uploadedUrls.length > 0) {
-        toast({
-          title: "تم الرفع بنجاح",
-          description: `تم رفع ${uploadedUrls.length} ملف بنجاح`,
-        });
-      }
-    } catch (error) {
+    // إذا لم يتم اختيار ملف ولم يتم إدخال رابط صورة
+    if (selectedFiles.length === 0 && !form.image) {
       toast({
         title: "خطأ",
-        description: "فشل رفع بعض الملفات",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // نسخ رابط الملف
-  const copyToClipboard = (url: string) => {
-    navigator.clipboard.writeText(url);
-    toast({
-      title: "تم النسخ",
-      description: "تم نسخ الرابط إلى الحافظة",
-    });
-  };
-
-  // حذف ملف من القائمة
-  const removeFile = (url: string) => {
-    const newFiles = uploadedFiles.filter(file => file !== url);
-    setUploadedFiles(newFiles);
-    localStorage.setItem('uploadedFiles', JSON.stringify(newFiles));
-  };
-
-  const handleSaveProduct = async () => {
-    if (!form.name || !form.description || !form.price || !form.category || !form.image) {
-      toast({
-        title: "خطأ",
-        description: "يرجى ملء جميع الحقول المطلوبة",
+        description: "يرجى اختيار ملف أو إدخال رابط صورة",
         variant: "destructive",
       });
       return;
@@ -235,6 +164,19 @@ export default function DashboardPage() {
 
     setSavingProduct(true);
     try {
+      let imageUrl = form.image;
+
+      // إذا تم اختيار ملف، قم برفعه أولاً
+      if (selectedFiles.length > 0) {
+        const file = selectedFiles[0]; // نستخدم الملف الأول فقط
+        imageUrl = await uploadAndUseFile(file);
+        toast({
+          title: "تم رفع الملف بنجاح",
+          description: `تم رفع ${file.name} بنجاح`,
+        });
+      }
+
+      // إضافة المنتج
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
@@ -243,6 +185,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           ...form,
           price: parseFloat(form.price),
+          image: imageUrl,
         }),
       });
 
@@ -258,6 +201,7 @@ export default function DashboardPage() {
           category: "",
           image: "",
         });
+        setSelectedFiles([]);
         
         // إعادة تحميل المنتجات
         const productsResponse = await fetch('/api/products');
@@ -271,7 +215,7 @@ export default function DashboardPage() {
     } catch (error) {
       toast({
         title: "خطأ",
-        description: "فشل حفظ المنتج",
+        description: error instanceof Error ? error.message : "فشل حفظ المنتج",
         variant: "destructive",
       });
     } finally {
@@ -433,159 +377,52 @@ export default function DashboardPage() {
 
       <Tabs defaultValue="products" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="products">إدارة المنتجات والملفات</TabsTrigger>
+          <TabsTrigger value="products">إدارة المنتجات</TabsTrigger>
           <TabsTrigger value="social">روابط التواصل</TabsTrigger>
           <TabsTrigger value="password">كلمة المرور</TabsTrigger>
         </TabsList>
 
         <TabsContent value="products" className="space-y-6">
-          {/* رفع ملفات جديدة */}
-          <Card>
-            <CardHeader>
-              <CardTitle>رفع الصور والفيديوهات</CardTitle>
-              <p className="text-sm text-gray-600">
-                ارفع الصور والفيديوهات لاستخدامها في المنتجات
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block mb-2 font-medium">اختر الملفات</label>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,video/*"
-                    onChange={handleFileSelect}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    يدعم: JPG, PNG, GIF, WebP, MP4, WebM, OGG (الحد الأقصى 10MB لكل ملف)
-                  </p>
-                </div>
-
-                {selectedFiles.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">الملفات المختارة ({selectedFiles.length})</h4>
-                    <div className="space-y-2">
-                      {selectedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span className="text-sm">{file.name}</span>
-                          <span className="text-xs text-gray-500">
-                            {(file.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <Button 
-                      onClick={handleUploadFiles} 
-                      disabled={uploading}
-                      className="mt-4"
-                    >
-                      {uploading ? "جاري الرفع..." : `رفع ${selectedFiles.length} ملف`}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* الملفات المرفوعة */}
-          <Card>
-            <CardHeader>
-              <CardTitle>الملفات المرفوعة ({uploadedFiles.length})</CardTitle>
-              <p className="text-sm text-gray-600">
-                انسخ الروابط أو استخدمها مباشرة في المنتجات
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {uploadedFiles.map((url, index) => (
-                  <div key={index} className="border p-3 rounded-lg">
-                    <div className="space-y-2">
-                      {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img 
-                          src={url} 
-                          alt="Preview" 
-                          className="w-full h-32 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-full h-32 bg-gray-200 rounded flex items-center justify-center">
-                          <span className="text-sm">فيديو</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyToClipboard(url)}
-                        >
-                          نسخ الرابط
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setForm(prev => ({ ...prev, image: url }))}
-                        >
-                          استخدم
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => removeFile(url)}
-                        >
-                          حذف
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {uploadedFiles.length === 0 && (
-                  <p className="text-center text-gray-500 col-span-full">لا توجد ملفات مرفوعة</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* إضافة منتج جديد */}
           <Card>
             <CardHeader>
               <CardTitle>إضافة منتج جديد</CardTitle>
               <p className="text-sm text-gray-600">
-                استخدم الملفات المرفوعة أعلاه أو أدخل رابط صورة مباشرة
+                اختر ملف صورة/فيديو أو أدخل رابط صورة مباشرة
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {/* اختيار الملف */}
                 <div>
-                  <label className="block mb-1 font-medium">اسم المنتج</label>
-                  <Input
-                    name="name"
-                    value={form.name}
-                    onChange={handleInputChange}
-                    placeholder="اسم المنتج"
+                  <label className="block mb-2 font-medium">اختر ملف صورة أو فيديو</label>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleFileSelect}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    يدعم: JPG, PNG, GIF, WebP, MP4, WebM, OGG (الحد الأقصى 10MB)
+                  </p>
                 </div>
-                <div>
-                  <label className="block mb-1 font-medium">الفئة</label>
-                  <Input
-                    name="category"
-                    value={form.category}
-                    onChange={handleInputChange}
-                    placeholder="فئة المنتج"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">السعر (₪)</label>
-                  <Input
-                    name="price"
-                    type="number"
-                    value={form.price}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">رابط الصورة</label>
+
+                {/* عرض الملف المختار */}
+                {selectedFiles.length > 0 && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium mb-2">الملف المختار</h4>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">{selectedFiles[0].name}</span>
+                      <span className="text-xs text-gray-500">
+                        {(selectedFiles[0].size / 1024 / 1024).toFixed(2)} MB
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* أو إدخال رابط صورة */}
+                <div className="border-t pt-4">
+                  <label className="block mb-2 font-medium">أو أدخل رابط صورة مباشرة</label>
                   <Input
                     name="image"
                     value={form.image}
@@ -605,24 +442,61 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block mb-1 font-medium">وصف المنتج</label>
-                  <Textarea
-                    name="description"
-                    value={form.description}
-                    onChange={handleInputChange}
-                    placeholder="وصف المنتج..."
-                    rows={3}
-                  />
+
+                {/* معلومات المنتج */}
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3">معلومات المنتج</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block mb-1 font-medium">اسم المنتج</label>
+                      <Input
+                        name="name"
+                        value={form.name}
+                        onChange={handleInputChange}
+                        placeholder="اسم المنتج"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 font-medium">الفئة</label>
+                      <Input
+                        name="category"
+                        value={form.category}
+                        onChange={handleInputChange}
+                        placeholder="فئة المنتج"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 font-medium">السعر (₪)</label>
+                      <Input
+                        name="price"
+                        type="number"
+                        value={form.price}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block mb-1 font-medium">وصف المنتج</label>
+                      <Textarea
+                        name="description"
+                        value={form.description}
+                        onChange={handleInputChange}
+                        placeholder="وصف المنتج..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* زر إضافة المنتج */}
+                <Button 
+                  onClick={handleSaveProduct} 
+                  disabled={savingProduct}
+                  className="w-full"
+                >
+                  {savingProduct ? "جاري الإضافة..." : "إضافة المنتج"}
+                </Button>
               </div>
-              <Button 
-                onClick={handleSaveProduct} 
-                disabled={savingProduct}
-                className="mt-4"
-              >
-                {savingProduct ? "جاري الحفظ..." : "إضافة المنتج"}
-              </Button>
             </CardContent>
           </Card>
 
