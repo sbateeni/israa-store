@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { ProductForm, ProductList, SocialLinksForm, PasswordForm } from "@/components/dashboard";
 import PasswordFix from "@/components/dashboard/password-fix";
+import EncryptPassword from "@/components/dashboard/encrypt-password";
 
 export default function DashboardPage() {
   const { loading, error } = useSettings();
@@ -139,7 +140,7 @@ export default function DashboardPage() {
         <TabsContent value="password" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">كلمة المرور</h2>
-                <Button 
+                        <Button 
               onClick={handleLogout}
               variant="outline"
               size="sm"
@@ -147,8 +148,9 @@ export default function DashboardPage() {
             >
               <LogOut className="h-3 w-3" />
               تسجيل الخروج
-                </Button>
-              </div>
+            </Button>
+          </div>
+          <EncryptPassword />
           <PasswordFix />
           <PasswordForm />
         </TabsContent>
