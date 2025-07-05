@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { ProductForm, ProductList, SocialLinksForm, PasswordForm } from "@/components/dashboard";
+import PasswordFix from "@/components/dashboard/password-fix";
 
 export default function DashboardPage() {
   const { loading, error } = useSettings();
@@ -148,6 +149,7 @@ export default function DashboardPage() {
               تسجيل الخروج
             </Button>
           </div>
+          <PasswordFix />
           <PasswordForm />
         </TabsContent>
       </Tabs>

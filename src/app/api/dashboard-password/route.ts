@@ -45,8 +45,31 @@ export async function GET() {
           if (text) {
             const passwordData = JSON.parse(text);
             console.log('Password data loaded from blob:', passwordData);
+            
+            // التعامل مع كلا الشكلين من كلمة المرور
+            let actualPassword = passwordData.password || passwordData.dashboardPassword || "israa2025";
+            
+            // إذا كان الملف يحتوي على dashboardPassword، نحوله إلى password
+            if (passwordData.dashboardPassword && !passwordData.password) {
+              console.log('Converting dashboardPassword to password format...');
+              const correctedData = { password: passwordData.dashboardPassword };
+              const correctedBlob = new Blob([JSON.stringify(correctedData, null, 2)], { type: "application/json" });
+              
+              try {
+                await put(PASSWORD_BLOB_KEY, correctedBlob, { 
+                  access: 'public', 
+                  token,
+                  allowOverwrite: true 
+                });
+                console.log('Password format corrected in blob storage');
+                actualPassword = passwordData.dashboardPassword;
+              } catch (error) {
+                console.error('Error correcting password format:', error);
+              }
+            }
+            
             return NextResponse.json({
-              password: passwordData.password,
+              password: actualPassword,
               message: "Password loaded from Vercel Blob Storage"
             }, {
               headers: {
@@ -142,6 +165,13 @@ export async function POST(req: NextRequest) {
       console.error('Password is required');
       return NextResponse.json({ 
         error: 'Password is required' 
+      }, { status: 400 });
+    }
+    
+    if (body.password.trim() === '') {
+      console.error('Password cannot be empty');
+      return NextResponse.json({ 
+        error: 'Password cannot be empty' 
       }, { status: 400 });
     }
     
