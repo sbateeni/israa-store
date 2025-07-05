@@ -41,13 +41,18 @@ interface ProductModalProps {
 export default function ProductModal({ product, onOpenChange }: ProductModalProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
-  const { formatSocialLink } = useSettings();
+  const { formatSocialLink, socialLinks, loading } = useSettings();
   const [quantity, setQuantity] = useState(1);
 
   // التحقق من صحة المنتج
   if (!product || typeof product !== 'object') {
     return null;
   }
+
+  // Debug logging
+  console.log('ProductModal - socialLinks:', socialLinks);
+  console.log('ProductModal - loading:', loading);
+  console.log('ProductModal - formatSocialLink whatsapp:', formatSocialLink('whatsapp'));
 
   const handleAddToCart = () => {
     if (!product || !product.name) {
@@ -82,11 +87,18 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
       return;
     }
     
+    console.log(`ProductModal - handleSocialClick ${platform}:`, {
+      socialLinks,
+      formatSocialLink: formatSocialLink(platform)
+    });
+    
     const settingsLink = formatSocialLink(platform);
     
     if (settingsLink) {
+      console.log(`ProductModal - Opening ${platform} link:`, settingsLink);
       window.open(settingsLink, '_blank');
     } else {
+      console.log(`ProductModal - No ${platform} link found`);
       toast({
         title: "خطأ",
         description: `لم يتم تعيين رابط ${platform} في إعدادات الموقع`,

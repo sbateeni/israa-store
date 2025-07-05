@@ -2,6 +2,7 @@
 
 import { fetchProducts } from "@/lib/products";
 import { useLocale } from "@/contexts/locale-provider";
+import { useSettings } from "@/hooks/use-settings";
 import React, { useState, useMemo, useEffect } from "react";
 import ProductCard from "../product-card";
 import { ProductCategory, Product } from "@/types";
@@ -16,12 +17,17 @@ import ProductModal from "../product-modal";
 
 export default function ProductsSection() {
   const { t } = useLocale();
+  const { socialLinks, loading: settingsLoading } = useSettings();
 
   const [selectedCategory, setSelectedCategory] =
     useState<ProductCategory | "all">("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Debug logging for settings
+  console.log('ProductsSection - socialLinks:', socialLinks);
+  console.log('ProductsSection - settingsLoading:', settingsLoading);
 
   useEffect(() => {
     (async () => {

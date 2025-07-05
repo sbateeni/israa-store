@@ -1,51 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
-import { put, del } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 
-const BLOB_API_URL = "https://api.vercel.com/v2/blob";
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || "vercel_blob_rw_3rYI5trXqmi2Rgmd_40mfx02cgDWi0OdNFlLEf8fa1ZTQXi";
 const SOCIAL_BLOB_KEY = "social-links.json";
 const PASSWORD_BLOB_KEY = "dashboard-password.json";
 
 export async function GET() {
   try {
     console.log('Fetching settings from Vercel Blob Storage...');
-    console.log('Using BLOB_TOKEN:', BLOB_TOKEN ? 'Token exists' : 'No token');
     
-    // محاولة جلب الإعدادات من Blob Storage
-    const [socialRes, passRes] = await Promise.all([
-      fetch(`${BLOB_API_URL}/get?pathname=${SOCIAL_BLOB_KEY}`, { 
-        headers: { 
-          Authorization: `Bearer ${BLOB_TOKEN}`,
-          'Content-Type': 'application/json'
-        } 
-      }),
-      fetch(`${BLOB_API_URL}/get?pathname=${PASSWORD_BLOB_KEY}`, { 
-        headers: { 
-          Authorization: `Bearer ${BLOB_TOKEN}`,
-          'Content-Type': 'application/json'
-        } 
-      })
-    ]);
-
-    console.log('Blob response status:', socialRes.status, passRes.status);
-
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) {
+      console.error('Missing BLOB_READ_WRITE_TOKEN');
+      return NextResponse.json({
+        whatsapp: "",
+        facebook: "",
+        instagram: "",
+        snapchat: "",
+        dashboardPassword: "",
+      });
+    }
+    
+    // جلب جميع الملفات من Blob Storage
+    const { blobs } = await list();
+    console.log('Available blobs:', blobs.map(b => b.pathname));
+    
     let social = { whatsapp: "", facebook: "", instagram: "", snapchat: "" };
     let password = { dashboardPassword: "" };
 
-    if (socialRes.ok) {
-      const socialData = await socialRes.json();
-      console.log('Social data loaded:', socialData);
-      social = socialData;
+    // البحث عن ملف social-links.json
+    const socialBlob = blobs.find(blob => blob.pathname === SOCIAL_BLOB_KEY);
+    if (socialBlob) {
+      try {
+        console.log('Found social blob, fetching content...');
+        const response = await fetch(socialBlob.url);
+        if (response.ok) {
+          const text = await response.text();
+          if (text) {
+            const socialData = JSON.parse(text);
+            console.log('Social data loaded:', socialData);
+            social = socialData;
+          }
+        }
+      } catch (error) {
+        console.error('Error reading social blob:', error);
+      }
     } else {
-      console.log('Social blob not found (status:', socialRes.status, '), using defaults');
+      console.log('Social blob not found, using defaults');
     }
 
-    if (passRes.ok) {
-      const passData = await passRes.json();
-      console.log('Password data loaded:', passData);
-      password = passData;
+    // البحث عن ملف dashboard-password.json
+    const passwordBlob = blobs.find(blob => blob.pathname === PASSWORD_BLOB_KEY);
+    if (passwordBlob) {
+      try {
+        console.log('Found password blob, fetching content...');
+        const response = await fetch(passwordBlob.url);
+        if (response.ok) {
+          const text = await response.text();
+          if (text) {
+            const passwordData = JSON.parse(text);
+            console.log('Password data loaded:', passwordData);
+            password = passwordData;
+          }
+        }
+      } catch (error) {
+        console.error('Error reading password blob:', error);
+      }
     } else {
-      console.log('Password blob not found (status:', passRes.status, '), using defaults');
+      console.log('Password blob not found, using defaults');
     }
 
     const combinedSettings = { ...social, ...password };
@@ -67,7 +88,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     console.log('Received POST request with body:', body);
-    console.log('Using BLOB_TOKEN:', BLOB_TOKEN ? 'Token exists' : 'No token');
+    
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) {
+      console.error('Missing BLOB_READ_WRITE_TOKEN');
+      return NextResponse.json({ error: 'Missing BLOB_READ_WRITE_TOKEN' }, { status: 500 });
+    }
     
     // التحقق من وجود البيانات
     if (!body) {
@@ -110,7 +136,7 @@ export async function POST(req: NextRequest) {
     console.log('Saving social links...');
     const socialResult = await put(SOCIAL_BLOB_KEY, socialBlob, { 
       access: 'public', 
-      token: BLOB_TOKEN,
+      token,
       allowOverwrite: true 
     });
     console.log('Social links saved:', socialResult.url);
@@ -118,7 +144,7 @@ export async function POST(req: NextRequest) {
     console.log('Saving password...');
     const passResult = await put(PASSWORD_BLOB_KEY, passBlob, { 
       access: 'public', 
-      token: BLOB_TOKEN,
+      token,
       allowOverwrite: true 
     });
     console.log('Password saved:', passResult.url);
