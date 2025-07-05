@@ -17,6 +17,11 @@ function decryptPassword(encrypted: string): string {
       return encrypted; // إرجاع النص كما هو إذا لم يكن مشفراً
     }
     
+    // التحقق من أن النص مشفر بـ Base64
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encrypted)) {
+      return encrypted; // إرجاع النص كما هو إذا لم يكن Base64
+    }
+    
     const decrypted = Buffer.from(encrypted, 'base64').toString('utf-8');
     
     // التحقق من أن النتيجة صحيحة

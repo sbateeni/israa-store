@@ -52,6 +52,8 @@ export default function LoginPage() {
           description: "كلمة المرور غير صحيحة",
           variant: "destructive",
         });
+        // مسح كلمة المرور من الحقل بعد المحاولة الفاشلة
+        setPassword("");
       }
     } catch (error) {
       toast({
@@ -59,6 +61,8 @@ export default function LoginPage() {
         description: "حدث خطأ أثناء تسجيل الدخول",
         variant: "destructive",
       });
+      // مسح كلمة المرور من الحقل في حالة الخطأ
+      setPassword("");
     } finally {
       setIsLoggingIn(false);
     }
