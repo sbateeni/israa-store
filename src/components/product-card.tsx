@@ -6,32 +6,38 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button";
 import { useCart } from "@/contexts/cart-provider";
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from "@/hooks/use-settings";
 
 interface ProductCardProps {
   product: Product;
-  onViewDetails: () => void;
+  onViewDetails: (product: Product) => void;
 }
 
 export default function ProductCard({ product, onViewDetails }: ProductCardProps) {
-  const { addItem, setCartOpen } = useCart();
+  const { addItem } = useCart();
   const { toast } = useToast();
-  
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const { formatSocialLink } = useSettings();
+
+  const handleAddToCart = () => {
     addItem(product);
     toast({
-      title: `${product.name} added to cart!`,
+      title: "تم الإضافة",
+      description: `تم إضافة ${product.name} إلى السلة`,
     });
-    setCartOpen(true);
   };
 
   const handleSocialClick = (e: React.MouseEvent, url: string, platform: string) => {
     e.stopPropagation();
-    if (url) {
-      window.open(url, '_blank');
+    
+    // استخدام الإعدادات المحفوظة بدلاً من روابط المنتج
+    const settingsLink = formatSocialLink(platform as 'whatsapp' | 'facebook' | 'instagram' | 'snapchat');
+    
+    if (settingsLink) {
+      window.open(settingsLink, '_blank');
     } else {
       toast({
-        title: `رابط ${platform} غير متوفر`,
+        title: "خطأ",
+        description: `لم يتم تعيين رابط ${platform} في إعدادات الموقع`,
         variant: "destructive",
       });
     }
@@ -40,7 +46,7 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
   return (
     <Card
       className="overflow-hidden group cursor-pointer flex flex-col h-full rounded-2xl shadow-md transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 bg-background"
-      onClick={onViewDetails}
+      onClick={() => onViewDetails(product)}
     >
       <CardHeader className="p-0">
         <div className="relative aspect-square w-full">
@@ -73,7 +79,7 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
           </div>
                     <div className="flex justify-center gap-3">
             <button
-              onClick={(e) => handleSocialClick(e, product.whatsapp || 'https://wa.me/', 'واتساب')}
+              onClick={(e) => handleSocialClick(e, '', 'whatsapp')}
               className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
               title="واتساب"
             >
@@ -83,7 +89,7 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
           </button>
           
                       <button
-              onClick={(e) => handleSocialClick(e, product.facebook || 'https://facebook.com', 'فيسبوك')}
+              onClick={(e) => handleSocialClick(e, '', 'facebook')}
               className="w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
               title="فيسبوك"
             >
@@ -93,7 +99,7 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
           </button>
           
                       <button
-              onClick={(e) => handleSocialClick(e, product.instagram || 'https://instagram.com', 'انستغرام')}
+              onClick={(e) => handleSocialClick(e, '', 'instagram')}
               className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
               title="انستغرام"
             >
@@ -103,7 +109,7 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
           </button>
           
                       <button
-              onClick={(e) => handleSocialClick(e, product.snapchat || 'https://snapchat.com', 'سناب شات')}
+              onClick={(e) => handleSocialClick(e, '', 'snapchat')}
               className="w-10 h-10 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
               title="سناب شات"
             >

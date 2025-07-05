@@ -15,6 +15,7 @@ import { Input } from "../ui/input";
 import { Trash2, Instagram } from "lucide-react";
 import { Separator } from "../ui/separator";
 import ProductRecommendations from "./product-recommendations";
+import { useSettings } from "@/hooks/use-settings";
 
 const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -32,60 +33,80 @@ const SnapchatIcon = () => (
     </svg>
 );
 
-
 interface CartSheetProps {
   isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  onOpenChange: (open: boolean) => void;
 }
 
 export default function CartSheet({ isOpen, onOpenChange }: CartSheetProps) {
-  const { t, locale } = useLocale();
-  const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
+  const { t } = useLocale();
+  const { formatSocialLink } = useSettings();
+
+  const handleSocialClick = (platform: 'whatsapp' | 'instagram' | 'snapchat') => {
+    const settingsLink = formatSocialLink(platform);
+    
+    if (settingsLink) {
+      window.open(settingsLink, '_blank');
+    }
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col">
+      <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>{t("cart.title")} ({totalItems})</SheetTitle>
+          <SheetTitle>{t('cart.title')}</SheetTitle>
         </SheetHeader>
-        {items.length === 0 ? (
-          <div className="flex-grow flex items-center justify-center">
-            <p className="text-muted-foreground">{t("cart.empty")}</p>
-          </div>
-        ) : (
-          <div className="flex-grow overflow-y-auto pr-4 -mr-4">
-            <div className="space-y-4">
+        
+        <div className="flex flex-col h-full">
+          {items.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-muted-foreground mb-4">{t('cart.empty')}</p>
+                <Button onClick={() => onOpenChange(false)}>
+                  {t('cart.continue_shopping')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto">
               {items.map((item) => (
-                <div key={item.id} className="flex gap-4">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={80}
-                    height={80}
-                    className="rounded-md object-cover"
-                    data-ai-hint={item.dataAiHint}
-                  />
-                  <div className="flex-grow">
-                    <h3 className="font-semibold">{item.name}</h3>
+                <div key={item.id} className="flex gap-4 py-4 border-b">
+                  <div className="relative w-16 h-16 flex-shrink-0">
+                    <Image
+                      src={item.image || ''}
+                      alt={item.name}
+                      fill
+                      className="object-cover rounded"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{item.name}</h3>
                     <p className="text-sm text-muted-foreground">{item.price} ₪</p>
                     <div className="flex items-center gap-2 mt-2">
                       <Input
                         type="number"
                         min="1"
                         value={item.quantity}
-                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 0)}
                         className="w-16 h-8"
                       />
-                      <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeItem(item.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+        
         {items.length > 0 && (
             <>
             <Separator />
@@ -102,20 +123,29 @@ export default function CartSheet({ isOpen, onOpenChange }: CartSheetProps) {
                   <div className="w-full space-y-3 pt-2 text-center">
                       <p className="text-sm text-muted-foreground">{t('cart.order_via')}</p>
                       <div className="flex justify-center gap-4">
-                          <Button variant="outline" size="icon" className="w-12 h-12 rounded-full" asChild>
-                              <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" aria-label="Order on WhatsApp">
-                                  <WhatsAppIcon />
-                              </a>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="w-12 h-12 rounded-full"
+                            onClick={() => handleSocialClick('whatsapp')}
+                          >
+                              <WhatsAppIcon />
                           </Button>
-                          <Button variant="outline" size="icon" className="w-12 h-12 rounded-full" asChild>
-                              <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Order on Instagram">
-                                  <Instagram className="h-6 w-6" />
-                              </a>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="w-12 h-12 rounded-full"
+                            onClick={() => handleSocialClick('instagram')}
+                          >
+                              <Instagram className="h-6 w-6" />
                           </Button>
-                          <Button variant="outline" size="icon" className="w-12 h-12 rounded-full" asChild>
-                              <a href="https://www.snapchat.com/" target="_blank" rel="noopener noreferrer" aria-label="Order on Snapchat">
-                                  <SnapchatIcon />
-                              </a>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="w-12 h-12 rounded-full"
+                            onClick={() => handleSocialClick('snapchat')}
+                          >
+                              <SnapchatIcon />
                           </Button>
                       </div>
                   </div>

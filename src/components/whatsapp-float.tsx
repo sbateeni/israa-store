@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "./ui/button";
+import { useSettings } from "@/hooks/use-settings";
 
 const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -9,9 +10,17 @@ const WhatsAppIcon = () => (
 )
 
 export default function WhatsAppFloat() {
+  const { formatSocialLink } = useSettings();
+  const whatsappLink = formatSocialLink('whatsapp');
+
+  // إذا لم تكن هناك إعدادات واتساب، لا تعرض الأيقونة
+  if (!whatsappLink) {
+    return null;
+  }
+
   return (
     <a
-      href="https://wa.me/"
+      href={whatsappLink}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contact us on WhatsApp"

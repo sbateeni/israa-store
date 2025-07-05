@@ -15,6 +15,7 @@ import { useCart } from "@/contexts/cart-provider";
 import { useToast } from "@/hooks/use-toast";
 import { Instagram, Facebook } from "lucide-react";
 import { useState } from "react";
+import { useSettings } from "@/hooks/use-settings";
 
 const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -32,72 +33,58 @@ const SnapchatIcon = () => (
     </svg>
 );
 
-
 interface ProductModalProps {
-  product: Product | null;
-  onOpenChange: (isOpen: boolean) => void;
+  product: Product;
+  onOpenChange: (open: boolean) => void;
 }
 
 export default function ProductModal({ product, onOpenChange }: ProductModalProps) {
-  const { addItem, setCartOpen } = useCart();
+  const { addItem } = useCart();
   const { toast } = useToast();
-  const [imgIdx, setImgIdx] = useState(0);
-
-  if (!product) return null;
+  const { formatSocialLink } = useSettings();
+  const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = () => {
-    addItem(product);
+    // إضافة المنتج بالكمية المحددة
+    for (let i = 0; i < quantity; i++) {
+      addItem(product);
+    }
+    
     toast({
-      title: `تمت إضافة المنتج إلى السلة بنجاح!`,
-      description: `تمت إضافة ${product.name} إلى سلة مشترياتك.`,
+      title: "تم الإضافة",
+      description: `تم إضافة ${quantity} من ${product.name} إلى السلة`,
     });
+    
     onOpenChange(false);
-    setCartOpen(true);
-  }
+  };
 
-  const images = product.images && product.images.length > 0 ? product.images : product.image ? [product.image] : [];
-  const safeImages = images.filter((img): img is string => typeof img === 'string');
+  const handleSocialClick = (platform: 'whatsapp' | 'facebook' | 'instagram' | 'snapchat') => {
+    const settingsLink = formatSocialLink(platform);
+    
+    if (settingsLink) {
+      window.open(settingsLink, '_blank');
+    } else {
+      toast({
+        title: "خطأ",
+        description: `لم يتم تعيين رابط ${platform} في إعدادات الموقع`,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <Dialog open={!!product} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[625px]">
+    <Dialog open={true} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex flex-col gap-4">
-            <div className="relative aspect-square">
-              {product.video ? (
-                <video
-                  src={product.video}
-                  controls
-                  loop
-                  autoPlay
-                  muted
-                  className="w-full h-full object-cover rounded-md"
-                />
-              ) : safeImages.length > 0 ? (
-                <Image
-                  src={safeImages[imgIdx]}
-                  alt={product.name}
-                  fill
-                  className="object-cover rounded-md"
-                  data-ai-hint={product.dataAiHint}
-                />
-              ) : null}
-            </div>
-            {safeImages.length > 1 && (
-              <div className="flex gap-2 mt-2 justify-center">
-                {safeImages.map((img, idx) => (
-                  <button
-                    key={img}
-                    type="button"
-                    className={`border rounded-md overflow-hidden w-14 h-14 relative ${imgIdx === idx ? 'ring-2 ring-primary' : ''}`}
-                    onClick={() => setImgIdx(idx)}
-                  >
-                    <Image src={img} alt={product.name + ' thumbnail'} fill className="object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="relative aspect-square">
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover rounded-lg"
+            />
           </div>
+
           <div className="flex flex-col">
             <DialogHeader>
               <p className="text-sm text-muted-foreground">{product.category}</p>
@@ -107,7 +94,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
             <DialogDescription className="text-base flex-grow">
               {product.description}
               
-                            {/* Social Media Icons */}
+              {/* Social Media Icons */}
               <div className="mt-4 text-center">
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 mb-3">
                   <p className="text-sm text-gray-700 font-medium">
@@ -116,7 +103,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                 </div>
                 <div className="flex justify-center gap-3">
                   <button
-                    onClick={() => window.open(product.whatsapp || 'https://wa.me/', '_blank')}
+                    onClick={() => handleSocialClick('whatsapp')}
                     className="w-12 h-12 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="واتساب"
                   >
@@ -124,7 +111,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                   </button>
                   
                   <button
-                    onClick={() => window.open(product.facebook || 'https://facebook.com', '_blank')}
+                    onClick={() => handleSocialClick('facebook')}
                     className="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="فيسبوك"
                   >
@@ -132,28 +119,47 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                   </button>
                   
                   <button
-                    onClick={() => window.open(product.instagram || 'https://instagram.com', '_blank')}
+                    onClick={() => handleSocialClick('instagram')}
                     className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="انستغرام"
                   >
                     <Instagram className="h-5 w-5 text-white" />
                   </button>
                   
-                                                        <button
-                    onClick={() => window.open(product.snapchat || 'https://snapchat.com', '_blank')}
+                  <button
+                    onClick={() => handleSocialClick('snapchat')}
                     className="w-12 h-12 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
                     title="سناب شات"
                   >
-                                <SnapchatIcon />
-                    </button>
-                  </div>
+                    <SnapchatIcon />
+                  </button>
                 </div>
+              </div>
             </DialogDescription>
-            
 
-            
-            <DialogFooter className="mt-4 justify-center">
-              <Button className="w-full sm:w-auto" onClick={handleAddToCart}>أضف للسلة</Button>
+            <DialogFooter className="mt-6">
+              <div className="flex items-center gap-4 w-full">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="quantity" className="text-sm font-medium">
+                    الكمية:
+                  </label>
+                  <select
+                    id="quantity"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <option key={num} value={num}>
+                        {num}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Button onClick={handleAddToCart} className="flex-1">
+                  أضف للسلة - {quantity * product.price} ₪
+                </Button>
+              </div>
             </DialogFooter>
           </div>
         </div>
