@@ -434,53 +434,117 @@ export default function UnifiedPasswordManager() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">اختبار كلمة المرور</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                try {
-                  setLoading(true);
-                  const response = await fetch('/api/test-password', {
-                    cache: 'no-store',
-                    headers: {
-                      'Cache-Control': 'no-cache, no-store, must-revalidate',
-                      'Pragma': 'no-cache',
-                      'Expires': '0'
-                    }
-                  });
-
-                  if (response.ok) {
-                    const result = await response.json();
-                    toast({
-                      title: "نتيجة الاختبار",
-                      description: `كلمة المرور ${result.data.isEncrypted ? 'مشفرة' : 'غير مشفرة'} - الطول: ${result.data.passwordLength} حرف`,
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    const response = await fetch('/api/test-password', {
+                      cache: 'no-store',
+                      headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                      }
                     });
-                  } else {
-                    const error = await response.json();
-                    throw new Error(error.error || 'فشل اختبار كلمة المرور');
+
+                    if (response.ok) {
+                      const result = await response.json();
+                      toast({
+                        title: "نتيجة الاختبار",
+                        description: `كلمة المرور ${result.data.isEncrypted ? 'مشفرة' : 'غير مشفرة'} - الطول: ${result.data.passwordLength} حرف`,
+                      });
+                    } else {
+                      const error = await response.json();
+                      throw new Error(error.error || 'فشل اختبار كلمة المرور');
+                    }
+                  } catch (error) {
+                    console.error('Error testing password:', error);
+                    toast({
+                      title: "خطأ",
+                      description: error instanceof Error ? error.message : "فشل اختبار كلمة المرور",
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setLoading(false);
                   }
-                } catch (error) {
-                  console.error('Error testing password:', error);
-                  toast({
-                    title: "خطأ",
-                    description: error instanceof Error ? error.message : "فشل اختبار كلمة المرور",
-                    variant: "destructive"
-                  });
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-            >
-              <TestTube className="h-4 w-4 mr-2" />
-              اختبار كلمة المرور
-            </Button>
+                }}
+                disabled={loading}
+              >
+                <TestTube className="h-4 w-4 mr-2" />
+                اختبار سريع
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    const response = await fetch('/api/debug-password', {
+                      cache: 'no-store',
+                      headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                      }
+                    });
+
+                    if (response.ok) {
+                      const result = await response.json();
+                      console.log('Debug result:', result);
+                      
+                      // عرض النتائج في console
+                      toast({
+                        title: "تم التشخيص",
+                        description: `تحقق من Console (F12) لرؤية التفاصيل الكاملة`,
+                      });
+                      
+                      // عرض النتائج المهمة
+                      const debug = result.debug;
+                      if (debug.passwordsMatch) {
+                        toast({
+                          title: "✅ كلمة المرور صحيحة",
+                          description: `كلمة المرور المحفوظة: ${debug.decryptedPassword}`,
+                        });
+                      } else {
+                        toast({
+                          title: "❌ كلمة المرور غير متطابقة",
+                          description: `المحفوظة: ${debug.decryptedPassword} | المتوقعة: ${debug.testPassword}`,
+                          variant: "destructive"
+                        });
+                      }
+                    } else {
+                      const error = await response.json();
+                      throw new Error(error.error || 'فشل تشخيص كلمة المرور');
+                    }
+                  } catch (error) {
+                    console.error('Error debugging password:', error);
+                    toast({
+                      title: "خطأ",
+                      description: error instanceof Error ? error.message : "فشل تشخيص كلمة المرور",
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                تشخيص تفصيلي
+              </Button>
+            </div>
           </div>
           
           <Alert className="border-blue-200 bg-blue-50">
             <TestTube className="h-4 w-4 text-blue-600" />
             <AlertDescription>
-              اختبار كلمة المرور يفحص حالة التشفير والتنسيق في Vercel Blob Storage
+              <strong>اختبار سريع:</strong> فحص سريع لحالة التشفير
+              <br />
+              <strong>تشخيص تفصيلي:</strong> فحص شامل مع مقارنة كلمة المرور
             </AlertDescription>
           </Alert>
         </div>
