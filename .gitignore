@@ -40,6 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# socials
-src/lib/socials.ts
+.vercel
 .env*.local

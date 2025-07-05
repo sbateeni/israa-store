@@ -1,6 +1,6 @@
 "use client";
 
-import { products as staticProducts } from "@/lib/products";
+import { fetchProducts } from "@/lib/products";
 import { useLocale } from "@/contexts/locale-provider";
 import React, { useState, useMemo, useEffect } from "react";
 import ProductCard from "../product-card";
@@ -22,26 +22,19 @@ export default function ProductsSection() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    fetch("/api/products")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setProducts(data);
-        else setProducts([]);
-        setLoading(false);
-      })
-      .catch(() => {
-        setProducts(staticProducts); // fallback
-        setError("تعذر تحميل المنتجات");
-        setLoading(false);
-      });
+    (async () => {
+      setLoading(true);
+      const prods = await fetchProducts();
+      console.log('products:', prods);
+      setProducts(prods);
+      setLoading(false);
+    })();
   }, []);
 
   const categories = useMemo(
-    () => Array.from(new Set(products.map((p) => p.category).filter((cat): cat is ProductCategory => typeof cat === 'string'))),
+    () => Array.from(new Set(products.map((p) => p.category))),
     [products]
   );
 
@@ -80,23 +73,19 @@ export default function ProductsSection() {
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {loading ? (
-          <p>جاري تحميل المنتجات...</p>
-        ) : error ? (
-          <p className="text-red-500">{error}</p>
-        ) : filteredProducts.length === 0 ? (
-          <p>لا توجد منتجات.</p>
-        ) : (
-          filteredProducts.map((product) => (
+      {loading ? (
+        <div className="text-center py-8">جاري تحميل المنتجات...</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {filteredProducts.map((product) => (
             <ProductCard 
-                key={product.id} 
+                key={product.id || `unknown-${Date.now()}-${Math.random()}`} 
                 product={product} 
                 onViewDetails={() => handleProductClick(product)}
-                />
-          ))
-        )}
-      </div>
+            />
+          ))}
+        </div>
+      )}
       <ProductModal product={selectedProduct} onOpenChange={(isOpen) => !isOpen && setSelectedProduct(null)}/>
     </section>
   );

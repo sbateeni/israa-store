@@ -33,23 +33,13 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
       <CardHeader className="p-0">
         <div className="relative aspect-square w-full">
           {product.image ? (
-            product.image.endsWith('.mp4') ? (
-              <video
-                src={product.image}
-                controls
-                muted
-                className="object-cover rounded-t-2xl w-full h-full"
-                style={{ aspectRatio: "1/1" }}
-              />
-            ) : (
-              <Image
-                src={product.image as string}
-                alt={product.name}
-                data-ai-hint={product.dataAiHint}
-                fill
-                className="object-cover rounded-t-2xl transition-transform duration-300 group-hover:scale-110 group-hover:brightness-105"
-              />
-            )
+            <Image
+              src={product.image as string}
+              alt={product.name}
+              data-ai-hint={product.dataAiHint}
+              fill
+              className="object-cover rounded-t-2xl transition-transform duration-300 group-hover:scale-110 group-hover:brightness-105"
+            />
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
               لا توجد صورة

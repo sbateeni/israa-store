@@ -14,7 +14,7 @@ import { Button } from "./ui/button";
 import { useCart } from "@/contexts/cart-provider";
 import { useToast } from "@/hooks/use-toast";
 import { Instagram, Facebook } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -42,19 +42,6 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
   const { addItem, setCartOpen } = useCart();
   const { toast } = useToast();
   const [imgIdx, setImgIdx] = useState(0);
-  const [globalSocials, setGlobalSocials] = useState<{facebook?: string, instagram?: string, snapchat?: string, whatsapp?: string}>({});
-
-  useEffect(() => {
-    fetch('/api/socials')
-      .then(async res => {
-        try {
-          const data = await res.json();
-          if (data && typeof data === 'object') setGlobalSocials(data);
-        } catch {
-          setGlobalSocials({});
-        }
-      });
-  }, []);
 
   if (!product) return null;
 
@@ -77,25 +64,23 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-4">
             <div className="relative aspect-square">
-              {safeImages.length > 0 ? (
-                safeImages[imgIdx].endsWith('.mp4') ? (
-                  <video
-                    src={safeImages[imgIdx]}
-                    controls
-                    muted
-                    className="w-full h-full object-cover rounded-md"
-                    style={{ aspectRatio: "1/1" }}
-                  />
-                ) : (
-                  <Image
-                    src={safeImages[imgIdx]}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover rounded-md"
-                    data-ai-hint={product.dataAiHint}
-                  />
-                )
+              {product.video ? (
+                <video
+                  src={product.video}
+                  controls
+                  loop
+                  autoPlay
+                  muted
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : safeImages.length > 0 ? (
+                <Image
+                  src={safeImages[imgIdx]}
+                  alt={product.name}
+                  fill
+                  className="object-cover rounded-md"
+                  data-ai-hint={product.dataAiHint}
+                />
               ) : null}
             </div>
             {safeImages.length > 1 && (
@@ -107,11 +92,7 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
                     className={`border rounded-md overflow-hidden w-14 h-14 relative ${imgIdx === idx ? 'ring-2 ring-primary' : ''}`}
                     onClick={() => setImgIdx(idx)}
                   >
-                    {img.endsWith('.mp4') ? (
-                      <video src={img} className="object-cover w-full h-full" muted />
-                    ) : (
-                      <Image src={img} alt={product.name + ' thumbnail'} fill className="object-cover" sizes="56px" />
-                    )}
+                    <Image src={img} alt={product.name + ' thumbnail'} fill className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -128,30 +109,30 @@ export default function ProductModal({ product, onOpenChange }: ProductModalProp
             </DialogDescription>
             <DialogFooter className="mt-4 sm:justify-between items-center">
                 <div className="flex justify-start items-center gap-2 order-last sm:order-first">
-                    {(product.facebook || globalSocials.facebook) && (
+                    {product.facebook && (
                         <Button variant="ghost" size="icon" asChild>
-                            <a href={product.facebook || globalSocials.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                            <a href={product.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
                                 <Facebook className="h-5 w-5" />
                             </a>
                         </Button>
                     )}
-                    {(product.instagram || globalSocials.instagram) && (
+                    {product.instagram && (
                         <Button variant="ghost" size="icon" asChild>
-                            <a href={product.instagram || globalSocials.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                            <a href={product.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                                 <Instagram className="h-5 w-5" />
                             </a>
                         </Button>
                     )}
-                    {(product.snapchat || globalSocials.snapchat) && (
+                    {product.snapchat && (
                         <Button variant="ghost" size="icon" asChild>
-                            <a href={product.snapchat || globalSocials.snapchat} target="_blank" rel="noopener noreferrer" aria-label="Snapchat">
+                            <a href={product.snapchat} target="_blank" rel="noopener noreferrer" aria-label="Snapchat">
                                 <SnapchatIcon />
                             </a>
                         </Button>
                     )}
-                    {(product.whatsapp || globalSocials.whatsapp) && (
+                    {product.whatsapp && (
                         <Button variant="ghost" size="icon" asChild>
-                            <a href={product.whatsapp || globalSocials.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                            <a href={product.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
                                 <WhatsAppIcon />
                             </a>
                         </Button>
