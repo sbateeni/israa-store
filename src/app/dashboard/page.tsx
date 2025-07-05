@@ -217,6 +217,19 @@ export default function DashboardPage() {
       instagram: product.instagram || "",
       snapchat: product.snapchat || "",
     });
+    
+    // إظهار رسالة للمستخدم عن الصور والفيديوهات الموجودة
+    let message = "";
+    if (product.images && product.images.length > 1) {
+      message += `المنتج يحتوي على ${product.images.length} صور. `;
+    }
+    if (product.videos && product.videos.length > 1) {
+      message += `المنتج يحتوي على ${product.videos.length} فيديوهات. `;
+    }
+    if (message) {
+      setMessage({ type: 'success', text: message + 'يمكنك إضافة صور وفيديوهات جديدة أو الاحتفاظ بالحالية.' });
+      setTimeout(() => setMessage(null), 5000);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -347,6 +360,9 @@ export default function DashboardPage() {
         <div>
           <label className="block mb-1">صور المنتج (يمكن اختيار عدة صور)</label>
           <p className="text-sm text-gray-600 mb-2">انقر على الصورة لاختيارها كصورة رئيسية، أو اضغط × لحذفها</p>
+          {form.images.length > 0 && (
+            <p className="text-sm text-blue-600 mb-2">تم اختيار {form.images.length} صورة</p>
+          )}
           <input
             name="images"
             type="file"
@@ -391,6 +407,9 @@ export default function DashboardPage() {
         <div>
           <label className="block mb-1">فيديوهات المنتج (يمكن اختيار عدة فيديوهات)</label>
           <p className="text-sm text-gray-600 mb-2">اضغط "حذف" لإزالة أي فيديو من القائمة</p>
+          {form.videos.length > 0 && (
+            <p className="text-sm text-green-600 mb-2">تم اختيار {form.videos.length} فيديو</p>
+          )}
           <input
             name="videos"
             type="file"
@@ -519,30 +538,40 @@ export default function DashboardPage() {
                 <p>{product.description}</p>
                 <p className="text-sm text-gray-600">السعر: {product.price} ريال</p>
                 {product.image && (
-                  <img src={product.image} alt={product.name} className="w-32 h-32 object-cover mt-2" />
+                  <div className="mt-2">
+                    <img src={product.image} alt={product.name} className="w-32 h-32 object-cover rounded" />
+                    {product.images && product.images.length > 1 && (
+                      <p className="text-xs text-gray-500 mt-1">+ {product.images.length - 1} صور إضافية</p>
+                    )}
+                  </div>
                 )}
                 {product.video && (
-                  <video src={product.video} controls className="w-32 h-32 mt-2" />
+                  <div className="mt-2">
+                    <video src={product.video} controls className="w-32 h-32 rounded" />
+                    {product.videos && product.videos.length > 1 && (
+                      <p className="text-xs text-gray-500 mt-1">+ {product.videos.length - 1} فيديوهات إضافية</p>
+                    )}
+                  </div>
                 )}
                 {/* Social Media Links Display */}
                 <div className="flex gap-2 mt-2">
-                  {product.whatsapp && (
-                    <a href={product.whatsapp} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                  {(product.whatsapp || siteSettings.whatsapp) && (
+                    <a href={product.whatsapp || siteSettings.whatsapp} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
                       واتساب
                     </a>
                   )}
-                  {product.facebook && (
-                    <a href={product.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                  {(product.facebook || siteSettings.facebook) && (
+                    <a href={product.facebook || siteSettings.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
                       فيسبوك
                     </a>
                   )}
-                  {product.instagram && (
-                    <a href={product.instagram} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800">
+                  {(product.instagram || siteSettings.instagram) && (
+                    <a href={product.instagram || siteSettings.instagram} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800">
                       انستغرام
                     </a>
                   )}
-                  {product.snapchat && (
-                    <a href={product.snapchat} target="_blank" rel="noopener noreferrer" className="text-yellow-600 hover:text-yellow-800">
+                  {(product.snapchat || siteSettings.snapchat) && (
+                    <a href={product.snapchat || siteSettings.snapchat} target="_blank" rel="noopener noreferrer" className="text-yellow-600 hover:text-yellow-800">
                       سناب شات
                     </a>
                   )}
