@@ -98,9 +98,36 @@ export async function GET() {
     const testEncrypted = encryptPassword(testPassword);
     const testDecrypted = decryptPassword(testEncrypted);
     
+    // اختبار كلمات مرور بديلة
+    const alternativePasswords = [
+      "israa2025",
+      "israa_2025", 
+      "israa123",
+      "admin123"
+    ];
+    
+    const alternativeTests = alternativePasswords.map(pwd => ({
+      password: pwd,
+      encrypted: encryptPassword(pwd),
+      decrypted: decryptPassword(encryptPassword(pwd)),
+      works: pwd === decryptPassword(encryptPassword(pwd))
+    }));
+    
     // التحقق من حالة التشفير
     const isEncrypted = encryptedPassword !== decryptedPassword;
     const isBase64 = /^[A-Za-z0-9+/]*={0,2}$/.test(encryptedPassword);
+    
+    // فحص مشكلة الرمز @
+    const hasSpecialChar = testPassword.includes('@');
+    const specialCharTest = {
+      original: testPassword,
+      hasSpecialChar,
+      encrypted: testEncrypted,
+      decrypted: testDecrypted,
+      works: testPassword === testDecrypted,
+      length: testPassword.length,
+      charCodes: testPassword.split('').map(char => char.charCodeAt(0))
+    };
     
     return NextResponse.json({
       success: true,
@@ -134,7 +161,13 @@ export async function GET() {
           encrypted: testEncrypted,
           decrypted: testDecrypted,
           success: testPassword === testDecrypted
-        }
+        },
+        
+        // اختبار كلمات مرور بديلة
+        alternativeTests,
+        
+        // فحص مشكلة الرمز @
+        specialCharTest
       },
       message: "Password debug completed successfully"
     });

@@ -552,6 +552,64 @@ export default function UnifiedPasswordManager() {
           </Alert>
         </div>
 
+        {/* حل سريع لمشكلة كلمة المرور */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">حل سريع</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  const response = await fetch('/api/fix-password-simple', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: "israa2025" })
+                  });
+
+                  if (response.ok) {
+                    const result = await response.json();
+                    toast({
+                      title: "تم الحل بنجاح",
+                      description: `كلمة المرور الجديدة: ${result.password}`,
+                    });
+                    
+                    // إعادة فحص الحالة
+                    await checkPasswordStatus();
+                  } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'فشل حل المشكلة');
+                  }
+                } catch (error) {
+                  console.error('Error fixing password:', error);
+                  toast({
+                    title: "خطأ",
+                    description: error instanceof Error ? error.message : "فشل حل المشكلة",
+                    variant: "destructive"
+                  });
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 hover:text-green-800"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              حل سريع - كلمة مرور بسيطة
+            </Button>
+          </div>
+          
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-gray-800">
+              <strong className="text-green-800">الحل السريع:</strong> تعيين كلمة مرور بسيطة "israa2025" بدون رموز خاصة لحل مشكلة تسجيل الدخول
+            </AlertDescription>
+          </Alert>
+        </div>
+
         {/* معلومات إضافية */}
         <Alert className="border-blue-200 bg-blue-50">
           <Shield className="h-4 w-4 text-blue-600" />
