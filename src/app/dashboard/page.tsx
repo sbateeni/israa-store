@@ -432,18 +432,127 @@ export default function DashboardPage() {
       <h1 className="text-3xl font-bold mb-8 text-center">لوحة التحكم</h1>
 
       <Tabs defaultValue="products" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="products">إدارة المنتجات</TabsTrigger>
-          <TabsTrigger value="media">إدارة الملفات</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="products">إدارة المنتجات والملفات</TabsTrigger>
           <TabsTrigger value="social">روابط التواصل</TabsTrigger>
           <TabsTrigger value="password">كلمة المرور</TabsTrigger>
         </TabsList>
 
         <TabsContent value="products" className="space-y-6">
+          {/* رفع ملفات جديدة */}
+          <Card>
+            <CardHeader>
+              <CardTitle>رفع الصور والفيديوهات</CardTitle>
+              <p className="text-sm text-gray-600">
+                ارفع الصور والفيديوهات لاستخدامها في المنتجات
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block mb-2 font-medium">اختر الملفات</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleFileSelect}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    يدعم: JPG, PNG, GIF, WebP, MP4, WebM, OGG (الحد الأقصى 10MB لكل ملف)
+                  </p>
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">الملفات المختارة ({selectedFiles.length})</h4>
+                    <div className="space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-sm">{file.name}</span>
+                          <span className="text-xs text-gray-500">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <Button 
+                      onClick={handleUploadFiles} 
+                      disabled={uploading}
+                      className="mt-4"
+                    >
+                      {uploading ? "جاري الرفع..." : `رفع ${selectedFiles.length} ملف`}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* الملفات المرفوعة */}
+          <Card>
+            <CardHeader>
+              <CardTitle>الملفات المرفوعة ({uploadedFiles.length})</CardTitle>
+              <p className="text-sm text-gray-600">
+                انسخ الروابط أو استخدمها مباشرة في المنتجات
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {uploadedFiles.map((url, index) => (
+                  <div key={index} className="border p-3 rounded-lg">
+                    <div className="space-y-2">
+                      {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        <img 
+                          src={url} 
+                          alt="Preview" 
+                          className="w-full h-32 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-full h-32 bg-gray-200 rounded flex items-center justify-center">
+                          <span className="text-sm">فيديو</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(url)}
+                        >
+                          نسخ الرابط
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setForm(prev => ({ ...prev, image: url }))}
+                        >
+                          استخدم
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removeFile(url)}
+                        >
+                          حذف
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {uploadedFiles.length === 0 && (
+                  <p className="text-center text-gray-500 col-span-full">لا توجد ملفات مرفوعة</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* إضافة منتج جديد */}
           <Card>
             <CardHeader>
               <CardTitle>إضافة منتج جديد</CardTitle>
+              <p className="text-sm text-gray-600">
+                استخدم الملفات المرفوعة أعلاه أو أدخل رابط صورة مباشرة
+              </p>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -545,123 +654,6 @@ export default function DashboardPage() {
                 ))}
                 {products.length === 0 && (
                   <p className="text-center text-gray-500">لا توجد منتجات حالياً</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="media" className="space-y-6">
-          {/* رفع ملفات جديدة */}
-          <Card>
-            <CardHeader>
-              <CardTitle>رفع ملفات جديدة</CardTitle>
-              <p className="text-sm text-gray-600">
-                ارفع الصور والفيديوهات لاستخدامها في المنتجات
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block mb-2 font-medium">اختر الملفات</label>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,video/*"
-                    onChange={handleFileSelect}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    يدعم: JPG, PNG, GIF, WebP, MP4, WebM, OGG (الحد الأقصى 10MB لكل ملف)
-                  </p>
-                </div>
-
-                {selectedFiles.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">الملفات المختارة ({selectedFiles.length})</h4>
-                    <div className="space-y-2">
-                      {selectedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span className="text-sm">{file.name}</span>
-                          <span className="text-xs text-gray-500">
-                            {(file.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <Button 
-                      onClick={handleUploadFiles} 
-                      disabled={uploading}
-                      className="mt-4"
-                    >
-                      {uploading ? "جاري الرفع..." : `رفع ${selectedFiles.length} ملف`}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* الملفات المرفوعة */}
-          <Card>
-            <CardHeader>
-              <CardTitle>الملفات المرفوعة ({uploadedFiles.length})</CardTitle>
-              <p className="text-sm text-gray-600">
-                انسخ الروابط لاستخدامها في المنتجات
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {uploadedFiles.map((url, index) => (
-                  <div key={index} className="border p-4 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                            <img 
-                              src={url} 
-                              alt="Preview" 
-                              className="w-16 h-16 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-                              <span className="text-xs">فيديو</span>
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <p className="text-sm font-medium truncate">{url.split('/').pop()}</p>
-                            <p className="text-xs text-gray-500 truncate">{url}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyToClipboard(url)}
-                        >
-                          نسخ الرابط
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setForm(prev => ({ ...prev, image: url }))}
-                        >
-                          استخدم كصورة
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => removeFile(url)}
-                        >
-                          حذف
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {uploadedFiles.length === 0 && (
-                  <p className="text-center text-gray-500">لا توجد ملفات مرفوعة</p>
                 )}
               </div>
             </CardContent>
