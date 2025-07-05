@@ -64,17 +64,47 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
     formData.append('file', file);
     formData.append('key', `products-media/${Date.now()}-${file.name}`);
 
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
+    // Retry logic for 429 errors
+    let retries = 3;
+    let lastError: Error | null = null;
 
-    if (!response.ok) {
-      throw new Error(`فشل رفع ${file.name}`);
+    while (retries > 0) {
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.status === 429) {
+          // Rate limited - wait and retry
+          const waitTime = (4 - retries) * 1000; // 1s, 2s, 3s
+          console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          retries--;
+          continue;
+        }
+
+        if (!response.ok) {
+          throw new Error(`فشل رفع ${file.name}: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.url;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        
+        if (retries > 1) {
+          console.log(`Upload failed, retrying... (${retries - 1} attempts left)`);
+          retries--;
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          break;
+        }
+      }
     }
 
-    const data = await response.json();
-    return data.url;
+    throw lastError || new Error(`فشل رفع ${file.name} بعد عدة محاولات`);
   };
 
   const handleSaveProduct = async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface SocialLinks {
   whatsapp: string;
@@ -11,6 +11,10 @@ interface PasswordSetting {
   dashboardPassword: string;
 }
 
+// Cache for settings to prevent multiple API calls
+let settingsCache: any = null;
+let settingsPromise: Promise<any> | null = null;
+
 export function useSettings() {
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({
     whatsapp: "",
@@ -21,51 +25,99 @@ export function useSettings() {
   const [dashboardPassword, setDashboardPassword] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoaded = useRef(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
+      // Prevent multiple simultaneous requests
+      if (settingsPromise) {
+        try {
+          const data = await settingsPromise;
+          if (!hasLoaded.current) {
+            setSocialLinks({
+              whatsapp: data.whatsapp || "",
+              facebook: data.facebook || "",
+              instagram: data.instagram || "",
+              snapchat: data.snapchat || "",
+            });
+            setDashboardPassword(data.dashboardPassword || "");
+            hasLoaded.current = true;
+            setLoading(false);
+          }
+          return;
+        } catch (err) {
+          console.error('Error from cached promise:', err);
+        }
+      }
+
+      // Use cached data if available
+      if (settingsCache && !hasLoaded.current) {
+        setSocialLinks({
+          whatsapp: settingsCache.whatsapp || "",
+          facebook: settingsCache.facebook || "",
+          instagram: settingsCache.instagram || "",
+          snapchat: settingsCache.snapchat || "",
+        });
+        setDashboardPassword(settingsCache.dashboardPassword || "");
+        hasLoaded.current = true;
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
         
         console.log('Fetching settings from API...');
-        const response = await fetch('/api/settings', { 
+        
+        // Create a single promise for all concurrent requests
+        settingsPromise = fetch('/api/settings', { 
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache'
           }
+        }).then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log('Settings loaded from API:', data);
+          
+          // Cache the result
+          settingsCache = data;
+          
+          return data;
         });
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const data = await settingsPromise;
         
-        const data = await response.json();
-        console.log('Settings loaded from API:', data);
-        
-        setSocialLinks({
-          whatsapp: data.whatsapp || "",
-          facebook: data.facebook || "",
-          instagram: data.instagram || "",
-          snapchat: data.snapchat || "",
-        });
-        setDashboardPassword(data.dashboardPassword || "");
-        
-        console.log('Settings state updated:', {
-          socialLinks: {
+        if (!hasLoaded.current) {
+          setSocialLinks({
             whatsapp: data.whatsapp || "",
             facebook: data.facebook || "",
             instagram: data.instagram || "",
             snapchat: data.snapchat || "",
-          },
-          dashboardPassword: data.dashboardPassword || ""
-        });
+          });
+          setDashboardPassword(data.dashboardPassword || "");
+          hasLoaded.current = true;
+          
+          console.log('Settings state updated:', {
+            socialLinks: {
+              whatsapp: data.whatsapp || "",
+              facebook: data.facebook || "",
+              instagram: data.instagram || "",
+              snapchat: data.snapchat || "",
+            },
+            dashboardPassword: data.dashboardPassword || ""
+          });
+        }
       } catch (err) {
         console.error('Error fetching settings:', err);
         setError(err instanceof Error ? err.message : 'خطأ غير معروف');
       } finally {
         setLoading(false);
+        settingsPromise = null; // Reset promise after completion
       }
     };
 
@@ -98,6 +150,8 @@ export function useSettings() {
       
       if (result.success) {
         setSocialLinks(links);
+        // Update cache
+        settingsCache = { ...settingsCache, ...links };
         console.log('Social links updated in state:', links);
         return true;
       } else {
@@ -138,6 +192,8 @@ export function useSettings() {
       
       if (result.success) {
         setDashboardPassword(password);
+        // Update cache
+        settingsCache = { ...settingsCache, dashboardPassword: password };
         console.log('Password updated in state');
         return true;
       } else {
