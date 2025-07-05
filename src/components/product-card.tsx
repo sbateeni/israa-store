@@ -70,7 +70,17 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
   return (
     <Card
       className="overflow-hidden group cursor-pointer flex flex-col h-full rounded-2xl shadow-md transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 bg-background"
-      onClick={() => onViewDetails(product)}
+      onClick={() => {
+        if (product && product.name) {
+          onViewDetails(product);
+        } else {
+          toast({
+            title: "خطأ",
+            description: "لا يمكن عرض تفاصيل منتج غير صحيح",
+            variant: "destructive",
+          });
+        }
+      }}
     >
       <CardHeader className="p-0">
         <div className="relative aspect-square w-full">
