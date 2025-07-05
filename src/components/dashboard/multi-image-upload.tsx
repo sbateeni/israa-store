@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, X, Star, StarOff, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Star, StarOff, Image as ImageIcon, Zap } from "lucide-react";
+import { autoCompressFiles, isFileSizeAcceptable, getCompressionMessage } from './auto-compress';
 
 interface MultiImageUploadProps {
   onImagesChange: (images: { url: string; isMain: boolean }[]) => void;
@@ -17,7 +18,7 @@ interface MultiImageUploadProps {
 export default function MultiImageUpload({ 
   onImagesChange, 
   maxImages = 10, 
-  maxSize = 10,
+  maxSize = 4,
   initialImages = []
 }: MultiImageUploadProps) {
   const { toast } = useToast();
@@ -58,23 +59,40 @@ export default function MultiImageUpload({
       return;
     }
 
-    // التحقق من حجم الملفات
-    const oversizedFiles = fileArray.filter(file => file.size > maxSize * 1024 * 1024);
-    if (oversizedFiles.length > 0) {
-      toast({
-        title: "خطأ",
-        description: `بعض الملفات أكبر من ${maxSize}MB`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     setUploading(true);
     
     try {
+      // ضغط الملفات تلقائياً
+      console.log('MultiImageUpload: Starting auto-compression for', fileArray.length, 'files');
+      const compressedFiles = await autoCompressFiles(fileArray);
+      
+      // التحقق من الملفات بعد الضغط
+      const stillOversizedFiles = compressedFiles.filter(compressed => !isFileSizeAcceptable(compressed));
+      if (stillOversizedFiles.length > 0) {
+        const fileNames = stillOversizedFiles.map(c => c.file.name).join(', ');
+        toast({
+          title: "خطأ",
+          description: `بعض الملفات لا تزال كبيرة جداً بعد الضغط: ${fileNames}`,
+          variant: "destructive",
+        });
+        setUploading(false);
+        return;
+      }
+      
+      // عرض رسائل الضغط
+      compressedFiles.forEach(compressed => {
+        if (compressed.compressionRatio > 0) {
+          toast({
+            title: "تم الضغط",
+            description: getCompressionMessage(compressed),
+          });
+        }
+      });
+      
       const newImages = [];
       
-      for (const file of fileArray) {
+      for (const compressed of compressedFiles) {
+        const file = compressed.file;
         // رفع الملف إلى Vercel Blob
         const formData = new FormData();
         formData.append('file', file);
@@ -156,7 +174,7 @@ export default function MultiImageUpload({
   };
 
   const addImageFromUrl = () => {
-    const url = prompt("أدخل رابط الصورة:");
+    const url = prompt("أدخل رابط الصورة أو الفيديو:");
     if (!url) return;
 
     if (!url.startsWith('http')) {
@@ -168,7 +186,7 @@ export default function MultiImageUpload({
       return;
     }
 
-    console.log('MultiImageUpload: Adding image from URL:', url);
+    console.log('MultiImageUpload: Adding file from URL:', url);
     const newImage = {
       url,
       isMain: images.length === 0,
@@ -181,14 +199,14 @@ export default function MultiImageUpload({
     
     toast({
       title: "تمت الإضافة",
-      description: "تم إضافة الصورة من الرابط بنجاح",
+      description: "تم إضافة الملف من الرابط بنجاح",
     });
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">صور المنتج</h3>
+        <h3 className="text-lg font-medium">صور وفيديوهات المنتج</h3>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -208,16 +226,20 @@ export default function MultiImageUpload({
           <div className="text-center">
             <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
             <p className="text-sm text-gray-600 mb-2">
-              اسحب وأفلت الصور هنا أو اضغط للاختيار
+              اسحب وأفلت الصور والفيديوهات هنا أو اضغط للاختيار
             </p>
             <p className="text-xs text-gray-500 mb-4">
-              الحد الأقصى: {maxImages} صور، {maxSize}MB لكل صورة
+              الحد الأقصى: {maxImages} ملف، {maxSize}MB لكل ملف
             </p>
+            <div className="flex items-center justify-center gap-2 text-xs text-blue-600 mb-4">
+              <Zap className="w-4 h-4" />
+              <span>ضغط تلقائي للملفات الكبيرة</span>
+            </div>
             
             <input
               type="file"
               multiple
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={handleFileSelect}
               disabled={uploading || images.length >= maxImages}
               className="hidden"
@@ -236,7 +258,7 @@ export default function MultiImageUpload({
                   }
                 }}
               >
-                {uploading ? "جاري الرفع..." : `اختيار الصور (${images.length}/${maxImages})`}
+                {uploading ? "جاري الرفع..." : `اختيار الملفات (${images.length}/${maxImages})`}
               </Button>
             </label>
           </div>
@@ -304,9 +326,10 @@ export default function MultiImageUpload({
       {/* معلومات إضافية */}
       {images.length > 0 && (
         <div className="text-sm text-gray-600">
-          <p>• الصورة الرئيسية ستظهر في قائمة المنتجات</p>
-          <p>• يمكنك تغيير الصورة الرئيسية بالضغط على زر النجمة</p>
-          <p>• يمكنك حذف أي صورة بالضغط على زر X</p>
+          <p>• الصورة/الفيديو الرئيسي سيظهر في قائمة المنتجات</p>
+          <p>• يمكنك تغيير الملف الرئيسي بالضغط على زر النجمة</p>
+          <p>• يمكنك حذف أي ملف بالضغط على زر X</p>
+          <p>• الملفات الكبيرة سيتم ضغطها تلقائياً</p>
         </div>
       )}
     </div>

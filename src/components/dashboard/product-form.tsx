@@ -205,7 +205,7 @@ export default function ProductForm({ onProductAdded }: ProductFormProps) {
         <MultiImageUpload
           onImagesChange={handleImagesChange}
           maxImages={10}
-          maxSize={10}
+          maxSize={4}
         />
 
         {/* رابط صورة بديل (اختياري) */}

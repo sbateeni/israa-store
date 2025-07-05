@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@vercel/blob'],
   },
+  // إعدادات لحجم الطلب
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+    responseLimit: false,
+  },
   images: {
     remotePatterns: [
       {
